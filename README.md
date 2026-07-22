@@ -3,7 +3,7 @@
 A fruit trading card game Discord bot — like Pokémon TCG, but every card is a fruit.
 Collect all 30 fruits, open packs, and battle across servers!
 
-- 🃏 **30 collectible fruit cards** across 6 rarities (Common → Mythic), each with **ATK** and **HP** stats and hand-drawn vector art on a clean white background
+- 🃏 **30 collectible fruit cards** — all real fruits — across 6 rarities (Common → Mythic), each with **ATK** and **HP** stats and real fruit photography on a clean white background (openly licensed images, see [ATTRIBUTIONS.md](ATTRIBUTIONS.md))
 - 🌟 **Rarer = stronger.** Every rarity tier is a clear power jump — and the **Apple** is the rarest card in the game (0.1%, 1-in-1000)
 - 📦 **Packs** — 5 cards each, rarity-weighted pulls with a guaranteed Uncommon+
 - 🪙 **Coin economy** — daily rewards with streak bonuses, buy packs, sell duplicates
@@ -85,8 +85,9 @@ src/
   battle.js      battle engine (synced private-thread views)
   matchmaking.js cross-server matchmaking queue
   commands/      one file per command
-  art/           30 fruit illustrations (SVG, white background)
+  art/           30 real fruit photos (512x512 PNG, white background)
 assets/fonts/    bundled fonts (SIL OFL): Finger Paint (card text), Nunito
+ATTRIBUTIONS.md  photo credits & licenses
 ```
 
 ## Game balance

@@ -47,16 +47,11 @@ function esc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// Load a fruit's art file and return its inner markup (without the root tag).
-function loadArtInner(fruitId) {
-  const file = path.join(ROOT, 'src', 'art', `${fruitId}.svg`);
-  let svg = fs.readFileSync(file, 'utf8').trim();
-  svg = svg.replace(/^<\?xml[^>]*\?>\s*/, '');
-  const open = svg.match(/^<svg[^>]*>/);
-  if (!open || !svg.endsWith('</svg>')) {
-    throw new Error(`Malformed art file for ${fruitId}`);
-  }
-  return svg.slice(open[0].length, -'</svg>'.length);
+// Card art: real fruit photos (512x512 PNG, white background) in src/art/.
+function artPath(fruitId) {
+  const file = path.join(ROOT, 'src', 'art', `${fruitId}.png`);
+  if (!fs.existsSync(file)) throw new Error(`Missing art file for ${fruitId}`);
+  return file;
 }
 
 // Split flavor text into at most two centered lines.
@@ -90,7 +85,6 @@ function sparkle(cx, cy, r, fill = '#ffffff', opacity = 0.9) {
 function cardSvg(fruit) {
   const [light, dark] = FRAME_COLORS[fruit.rarity];
   const rarity = RARITIES[fruit.rarity];
-  const art = loadArtInner(fruit.id);
   const flavorLines = wrapFlavor(fruit.flavor);
   const flavorSvg = flavorLines
     .map(
@@ -120,9 +114,6 @@ function cardSvg(fruit) {
   <text x="200" y="53" font-family="Finger Paint" font-weight="800" font-size="28" fill="#ffffff" text-anchor="middle">${esc(fruit.name)}</text>
 
   <rect x="20" y="80" width="360" height="310" rx="14" fill="#ffffff"/>
-  <g clip-path="url(#artClip)">
-    <svg x="20" y="80" width="360" height="310" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet">${art}</svg>
-  </g>
 
   <g fill="#ffffff" opacity="0.9">
     <polygon points="46,410 52,404 58,410 52,416"/>
@@ -156,7 +147,15 @@ async function renderCard(fruitId) {
   if (fs.existsSync(diskPath)) {
     buf = fs.readFileSync(diskPath);
   } else {
-    buf = await sharp(Buffer.from(cardSvg(fruit))).png().toBuffer();
+    // Frame first (with an empty white art window), then the photo on top.
+    const photo = await sharp(artPath(fruitId))
+      .resize(310, 310, { fit: 'contain', background: '#ffffff' })
+      .png()
+      .toBuffer();
+    buf = await sharp(Buffer.from(cardSvg(fruit)))
+      .composite([{ input: photo, left: 45, top: 80 }])
+      .png()
+      .toBuffer();
     fs.mkdirSync(path.dirname(diskPath), { recursive: true });
     fs.writeFileSync(diskPath, buf);
   }

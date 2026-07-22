@@ -126,6 +126,15 @@ class BattleManager {
       { user: challenger, channel: message.channel },
       { user: opponent, channel: message.channel },
     ]);
+    try {
+      await this.runChallenge(message, battle, challenger, opponent);
+    } catch (err) {
+      this.cleanup(battle); // don't leave players flagged as in-battle
+      throw err;
+    }
+  }
+
+  async runChallenge(message, battle, challenger, opponent) {
     battle.phase = 'invite';
     battle.challengeChannel = message.channel;
 
@@ -154,6 +163,15 @@ class BattleManager {
   // Matchmade battle: entries = [{ user, channel }] possibly from different guilds.
   async startMatched(entries) {
     const battle = this.createBattle(entries);
+    try {
+      await this.runMatched(battle, entries);
+    } catch (err) {
+      this.cleanup(battle); // don't leave players flagged as in-battle
+      throw err;
+    }
+  }
+
+  async runMatched(battle, entries) {
     const sameChannel = entries[0].channel.id === entries[1].channel.id;
     const name = this.battleName(battle);
 

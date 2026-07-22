@@ -42,17 +42,17 @@ const FRUITS = [
   { id: 'passionfruit', name: 'Passionfruit', rarity: 'rare', atk: 46, hp: 88, flavor: 'Fights with passion. Obviously.' },
   { id: 'lychee', name: 'Lychee', rarity: 'rare', atk: 42, hp: 94, flavor: 'Dragon scales outside, pearl within.' },
   { id: 'starfruit', name: 'Starfruit', rarity: 'rare', atk: 48, hp: 84, flavor: 'Fell from the night sky. Landed in a salad.' },
-  { id: 'papaya', name: 'Papaya', rarity: 'rare', atk: 38, hp: 110, flavor: 'Tropical tank. Digests its enemies.' },
+  { id: 'persimmon', name: 'Persimmon', rarity: 'rare', atk: 38, hp: 110, flavor: 'The fruit of the gods. They have good taste.' },
 
   // ── Epic ────────────────────────────────────────────────
-  { id: 'durian', name: 'Durian', rarity: 'epic', atk: 54, hp: 138, flavor: 'The King of Fruits. Banned on public transport.' },
+  { id: 'avocado', name: 'Avocado', rarity: 'epic', atk: 54, hp: 138, flavor: 'Technically a berry. Spiritually a boulder.' },
   { id: 'mangosteen', name: 'Mangosteen', rarity: 'epic', atk: 58, hp: 118, flavor: 'The Queen of Fruits. Royalty hits different.' },
   { id: 'rambutan', name: 'Rambutan', rarity: 'epic', atk: 62, hp: 110, flavor: 'Hair-raising attack power.' },
-  { id: 'jackfruit', name: 'Jackfruit', rarity: 'epic', atk: 52, hp: 145, flavor: 'The largest tree fruit on Earth. It knows.' },
+  { id: 'salak', name: 'Salak', rarity: 'epic', atk: 52, hp: 145, flavor: 'The snake fruit. Wrapped in scales. Bites back.' },
 
   // ── Legendary ───────────────────────────────────────────
-  { id: 'golden_apple', name: 'Golden Apple', rarity: 'legendary', atk: 78, hp: 172, flavor: 'Forged in the orchard of the gods.' },
-  { id: 'cosmic_melon', name: 'Cosmic Melon', rarity: 'legendary', atk: 84, hp: 162, flavor: 'Contains a small galaxy. Seeds are stars.' },
+  { id: 'kiwano', name: 'Kiwano', rarity: 'legendary', atk: 78, hp: 172, flavor: 'The horned melon. Armored, ancient, furious.' },
+  { id: 'buddhas_hand', name: "Buddha's Hand", rarity: 'legendary', atk: 84, hp: 162, flavor: 'A dozen golden fingers. Zero mercy.' },
 
   // ── Mythic ──────────────────────────────────────────────
   { id: 'apple', name: 'Apple', rarity: 'mythic', atk: 95, hp: 210, flavor: 'The rarest fruit of all. It was hiding in plain sight.' },

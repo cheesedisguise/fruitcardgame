@@ -14,9 +14,9 @@ async function main() {
     fs.writeFileSync(path.join(outDir, `card-${fruit.id}.png`), buf);
     console.log(`card-${fruit.id}.png`);
   }
-  const spread = await render.renderPackSpread(['apple', 'golden_apple', 'dragonfruit', 'kiwi', 'banana']);
+  const spread = await render.renderPackSpread(['apple', 'kiwano', 'dragonfruit', 'kiwi', 'banana']);
   fs.writeFileSync(path.join(outDir, 'pack-spread.png'), spread);
-  const battle = await render.renderBattle('durian', 'cosmic_melon');
+  const battle = await render.renderBattle('avocado', 'buddhas_hand');
   fs.writeFileSync(path.join(outDir, 'battle.png'), battle);
   console.log('pack-spread.png\nbattle.png\nDone.');
 }
