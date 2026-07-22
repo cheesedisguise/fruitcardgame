@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#ffffff"/>
+<ellipse cx="256" cy="452" rx="160" ry="20" fill="#000000" opacity="0.08"/>
+<defs>
+<radialGradient id="pomBody" cx="0.34" cy="0.28" r="0.95">
+<stop offset="0" stop-color="#ff8a70"/>
+<stop offset="0.25" stop-color="#f4634c"/>
+<stop offset="0.5" stop-color="#dd4234"/>
+<stop offset="0.75" stop-color="#c02c2b"/>
+<stop offset="1" stop-color="#8f1d22"/>
+</radialGradient>
+<radialGradient id="pomAril" cx="0.35" cy="0.3" r="0.9">
+<stop offset="0" stop-color="#ff8585"/>
+<stop offset="0.4" stop-color="#ef3d55"/>
+<stop offset="0.75" stop-color="#cc1f3f"/>
+<stop offset="1" stop-color="#99122d"/>
+</radialGradient>
+<linearGradient id="pomCrown" x1="0" y1="1" x2="0.3" y2="0">
+<stop offset="0" stop-color="#c22b2a"/>
+<stop offset="1" stop-color="#8f1d22"/>
+</linearGradient>
+<clipPath id="pomClip">
+<circle cx="240" cy="272" r="142"/>
+</clipPath>
+<clipPath id="pomWedge">
+<path d="M312 300 C350 272 400 268 442 292 C452 340 446 392 420 424 C380 438 336 430 310 408 C296 370 298 332 312 300 Z"/>
+</clipPath>
+</defs>
+<g clip-path="url(#pomClip)">
+<rect x="0" y="0" width="512" height="512" fill="#7e1a1f"/>
+<circle cx="216" cy="250" r="142" fill="#a82526"/>
+<circle cx="230" cy="262" r="142" fill="url(#pomBody)"/>
+<g fill="none" stroke="#8f1d22" stroke-linecap="round">
+<path d="M158 172 C142 236 144 320 168 384" stroke-width="9" opacity="0.14"/>
+<path d="M226 142 C216 240 218 330 232 400" stroke-width="10" opacity="0.12"/>
+<path d="M300 150 C312 240 312 330 298 396" stroke-width="9" opacity="0.15"/>
+</g>
+<g fill="#ffd9c9" opacity="0.28">
+<circle cx="182" cy="238" r="2.2"/>
+<circle cx="214" cy="300" r="2"/>
+<circle cx="160" cy="304" r="2.4"/>
+<circle cx="286" cy="228" r="2"/>
+<circle cx="310" cy="300" r="2.2"/>
+<circle cx="256" cy="356" r="2"/>
+<circle cx="330" cy="252" r="2"/>
+</g>
+<ellipse cx="168" cy="196" rx="60" ry="86" fill="#ffffff" opacity="0.14" transform="rotate(-24 168 196)"/>
+<ellipse cx="150" cy="176" rx="14" ry="28" fill="#ffffff" opacity="0.38" transform="rotate(-26 150 176)"/>
+</g>
+<ellipse cx="260" cy="150" rx="34" ry="11" fill="#6e1418"/>
+<path d="M224 152 C222 132 226 112 238 94 L250 116 L262 84 L274 112 L292 90 L300 118 L318 108 C316 126 308 140 296 150 C274 160 246 160 224 152 Z" fill="url(#pomCrown)"/>
+<path d="M296 150 C308 140 316 126 318 108 L300 118 C300 132 296 142 288 148 Z" fill="#701419" opacity="0.65"/>
+<g stroke="#701419" stroke-width="3" stroke-linecap="round" opacity="0.45" fill="none">
+<line x1="250" y1="118" x2="252" y2="146"/>
+<line x1="274" y1="114" x2="272" y2="148"/>
+<line x1="299" y1="120" x2="292" y2="148"/>
+</g>
+<path d="M238 94 C 230 108 226 124 226 140" fill="none" stroke="#f4826b" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+<g clip-path="url(#pomWedge)">
+<rect x="0" y="0" width="512" height="512" fill="#d8bf94"/>
+<path transform="translate(-8,-8)" d="M312 300 C350 272 400 268 442 292 C452 340 446 392 420 424 C380 438 336 430 310 408 C296 370 298 332 312 300 Z" fill="#f3e3c3"/>
+<path d="M296 380 C330 412 380 424 430 414 L430 440 L296 440 Z" fill="#caa870" opacity="0.45"/>
+</g>
+<g>
+<circle cx="336" cy="318" r="12" fill="url(#pomAril)"/>
+<circle cx="362" cy="308" r="12" fill="url(#pomAril)"/>
+<circle cx="388" cy="304" r="12" fill="url(#pomAril)"/>
+<circle cx="412" cy="312" r="12" fill="url(#pomAril)"/>
+<circle cx="324" cy="344" r="12" fill="url(#pomAril)"/>
+<circle cx="350" cy="336" r="12" fill="url(#pomAril)"/>
+<circle cx="376" cy="330" r="12" fill="url(#pomAril)"/>
+<circle cx="402" cy="334" r="12" fill="url(#pomAril)"/>
+<circle cx="330" cy="370" r="12" fill="url(#pomAril)"/>
+<circle cx="356" cy="362" r="12" fill="url(#pomAril)"/>
+<circle cx="382" cy="358" r="12" fill="url(#pomAril)"/>
+<circle cx="406" cy="364" r="12" fill="url(#pomAril)"/>
+<circle cx="340" cy="394" r="12" fill="url(#pomAril)"/>
+<circle cx="366" cy="388" r="12" fill="url(#pomAril)"/>
+<circle cx="392" cy="386" r="12" fill="url(#pomAril)"/>
+<circle cx="412" cy="396" r="11" fill="url(#pomAril)"/>
+<circle cx="356" cy="412" r="11" fill="url(#pomAril)"/>
+<circle cx="380" cy="410" r="11" fill="url(#pomAril)"/>
+<circle cx="400" cy="414" r="10" fill="url(#pomAril)"/>
+</g>
+<g fill="#ffffff" opacity="0.8">
+<circle cx="332" cy="314" r="3.2"/>
+<circle cx="358" cy="304" r="3.2"/>
+<circle cx="384" cy="300" r="3.2"/>
+<circle cx="408" cy="308" r="3.2"/>
+<circle cx="320" cy="340" r="3.2"/>
+<circle cx="346" cy="332" r="3.2"/>
+<circle cx="372" cy="326" r="3.2"/>
+<circle cx="398" cy="330" r="3.2"/>
+<circle cx="326" cy="366" r="3.2"/>
+<circle cx="352" cy="358" r="3.2"/>
+<circle cx="378" cy="354" r="3.2"/>
+<circle cx="402" cy="360" r="3.2"/>
+<circle cx="336" cy="390" r="3.2"/>
+<circle cx="362" cy="384" r="3.2"/>
+<circle cx="388" cy="382" r="3.2"/>
+<circle cx="408" cy="392" r="3"/>
+<circle cx="352" cy="408" r="3"/>
+<circle cx="376" cy="406" r="3"/>
+<circle cx="397" cy="411" r="2.8"/>
+</g>
+<path d="M312 300 C350 272 400 268 442 292 L446 314 C406 292 358 294 322 322 C316 314 312 306 312 300 Z" fill="#a32026"/>
+<path d="M322 321 C358 294 406 292 445 313" fill="none" stroke="#f7ead0" stroke-width="3.5" opacity="0.85"/>
+<path d="M442 292 C452 340 446 392 420 424 L408 414 C430 386 434 340 428 300 Z" fill="#8f1d22"/>
+<ellipse cx="150" cy="440" rx="12" ry="4" fill="#000000" opacity="0.08"/>
+<ellipse cx="182" cy="446" rx="11" ry="4" fill="#000000" opacity="0.08"/>
+<circle cx="150" cy="432" r="11" fill="url(#pomAril)"/>
+<circle cx="182" cy="438" r="10" fill="url(#pomAril)"/>
+<circle cx="146" cy="428" r="3" fill="#ffffff" opacity="0.8"/>
+<circle cx="178" cy="434" r="2.8" fill="#ffffff" opacity="0.8"/>
+</svg>

@@ -1,0 +1,267 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#ffffff"/>
+<ellipse cx="256" cy="452" rx="168" ry="20" fill="#000000" opacity="0.08"/>
+<defs>
+<radialGradient id="kiwiFlesh" cx="0.42" cy="0.42" r="0.75">
+<stop offset="0" stop-color="#e6efb4"/>
+<stop offset="0.3" stop-color="#c8e276"/>
+<stop offset="0.65" stop-color="#9ccb44"/>
+<stop offset="0.88" stop-color="#7fb635"/>
+<stop offset="1" stop-color="#6da22c"/>
+</radialGradient>
+<radialGradient id="kiwiSkin" cx="0.35" cy="0.3" r="1">
+<stop offset="0" stop-color="#ab8a5c"/>
+<stop offset="0.5" stop-color="#8a6b45"/>
+<stop offset="1" stop-color="#5f4a2c"/>
+</radialGradient>
+<radialGradient id="kiwiCore" cx="0.45" cy="0.42" r="0.7">
+<stop offset="0" stop-color="#f8f3da"/>
+<stop offset="0.7" stop-color="#f2eac6"/>
+<stop offset="1" stop-color="#e5dcab"/>
+</radialGradient>
+<radialGradient id="kiwiSpec" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
+<stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+</radialGradient>
+<clipPath id="kiwiWholeClip"><ellipse cx="342" cy="230" rx="90" ry="118"/></clipPath>
+</defs>
+<g transform="rotate(-14 342 230)">
+<g stroke="#7a5c3a" stroke-width="2.2" stroke-linecap="round" opacity="0.9">
+<line x1="432" y1="230" x2="439" y2="230"/>
+<line x1="431.2" y1="246.1" x2="438.1" y2="246.8"/>
+<line x1="428.7" y1="261.8" x2="435.5" y2="263.3"/>
+<line x1="424.5" y1="277" x2="431.2" y2="279.2"/>
+<line x1="418.9" y1="291.3" x2="425.2" y2="294.3"/>
+<line x1="411.8" y1="304.5" x2="417.8" y2="308.2"/>
+<line x1="403.4" y1="316.2" x2="408.9" y2="320.7"/>
+<line x1="393.9" y1="326.4" x2="398.7" y2="331.5"/>
+<line x1="383.4" y1="334.8" x2="387.3" y2="340.6"/>
+<line x1="372.1" y1="341.2" x2="375.1" y2="347.5"/>
+<line x1="360.3" y1="345.5" x2="362.2" y2="352.3"/>
+<line x1="348.1" y1="347.7" x2="348.8" y2="354.7"/>
+<line x1="335.9" y1="347.7" x2="335.2" y2="354.7"/>
+<line x1="323.7" y1="345.5" x2="321.8" y2="352.3"/>
+<line x1="311.9" y1="341.2" x2="308.9" y2="347.5"/>
+<line x1="300.6" y1="334.8" x2="296.7" y2="340.6"/>
+<line x1="290.1" y1="326.4" x2="285.3" y2="331.5"/>
+<line x1="280.6" y1="316.2" x2="275.1" y2="320.7"/>
+<line x1="272.2" y1="304.5" x2="266.2" y2="308.2"/>
+<line x1="265.1" y1="291.3" x2="258.8" y2="294.3"/>
+<line x1="259.5" y1="277" x2="252.8" y2="279.2"/>
+<line x1="255.3" y1="261.8" x2="248.5" y2="263.3"/>
+<line x1="252.8" y1="246.1" x2="245.9" y2="246.8"/>
+<line x1="252" y1="230" x2="245" y2="230"/>
+<line x1="252.8" y1="213.9" x2="245.9" y2="213.2"/>
+<line x1="255.3" y1="198.2" x2="248.5" y2="196.7"/>
+<line x1="259.5" y1="183" x2="252.8" y2="180.8"/>
+<line x1="265.1" y1="168.7" x2="258.8" y2="165.7"/>
+<line x1="272.2" y1="155.5" x2="266.2" y2="151.8"/>
+<line x1="280.6" y1="143.8" x2="275.1" y2="139.3"/>
+<line x1="290.1" y1="133.6" x2="285.3" y2="128.5"/>
+<line x1="300.6" y1="125.2" x2="296.7" y2="119.4"/>
+<line x1="311.9" y1="118.8" x2="308.9" y2="112.5"/>
+<line x1="323.7" y1="114.5" x2="321.8" y2="107.7"/>
+<line x1="335.9" y1="112.3" x2="335.2" y2="105.3"/>
+<line x1="348.1" y1="112.3" x2="348.8" y2="105.3"/>
+<line x1="360.3" y1="114.5" x2="362.2" y2="107.7"/>
+<line x1="372.1" y1="118.8" x2="375.1" y2="112.5"/>
+<line x1="383.4" y1="125.2" x2="387.3" y2="119.4"/>
+<line x1="393.9" y1="133.6" x2="398.7" y2="128.5"/>
+<line x1="403.4" y1="143.8" x2="408.9" y2="139.3"/>
+<line x1="411.8" y1="155.5" x2="417.8" y2="151.8"/>
+<line x1="418.9" y1="168.7" x2="425.2" y2="165.7"/>
+<line x1="424.5" y1="183" x2="431.2" y2="180.8"/>
+<line x1="428.7" y1="198.2" x2="435.5" y2="196.7"/>
+<line x1="431.2" y1="213.9" x2="438.1" y2="213.2"/>
+</g>
+<g clip-path="url(#kiwiWholeClip)">
+<rect width="512" height="512" fill="#5f4a2c"/>
+<ellipse cx="333" cy="222" rx="90" ry="118" fill="url(#kiwiSkin)"/>
+<g stroke="#6b5334" stroke-width="2" stroke-linecap="round" opacity="0.45">
+<line x1="364.4" y1="227.5" x2="367.6" y2="232.5"/>
+<line x1="319.9" y1="262" x2="314.1" y2="260.4"/>
+<line x1="343" y1="175" x2="348.3" y2="172.2"/>
+<line x1="372.2" y1="279" x2="370.2" y2="284.7"/>
+<line x1="290.3" y1="220" x2="288" y2="214.5"/>
+<line x1="388.9" y1="185.8" x2="394.3" y2="188.3"/>
+<line x1="328.4" y1="312.6" x2="322.7" y2="314.4"/>
+<line x1="309.2" y1="150.6" x2="312.2" y2="145.4"/>
+<line x1="409" y1="260.7" x2="410.3" y2="266.5"/>
+<line x1="322.3" y1="244.2" x2="317.4" y2="240.8"/>
+<line x1="353.4" y1="188.6" x2="359.4" y2="187.8"/>
+<line x1="356.4" y1="281.7" x2="352.5" y2="286.3"/>
+<line x1="300.6" y1="200.2" x2="300.3" y2="194.2"/>
+<line x1="392.3" y1="212.2" x2="396.5" y2="216.4"/>
+<line x1="311.2" y1="295.6" x2="305.2" y2="295.3"/>
+<line x1="331.5" y1="146.2" x2="336.1" y2="142.4"/>
+<line x1="394.3" y1="286.6" x2="393.5" y2="292.5"/>
+<line x1="271.8" y1="236.5" x2="268.3" y2="231.6"/>
+<line x1="356.1" y1="206.3" x2="361.9" y2="207.6"/>
+<line x1="343" y1="274.6" x2="337.8" y2="277.7"/>
+<line x1="314.5" y1="189.4" x2="316.3" y2="183.7"/>
+<line x1="388.3" y1="236" x2="390.8" y2="241.4"/>
+<line x1="300.7" y1="272.9" x2="295.2" y2="270.6"/>
+<line x1="352.1" y1="153" x2="357.7" y2="150.9"/>
+<line x1="375" y1="302.3" x2="372.2" y2="307.6"/>
+<line x1="278.1" y1="204.8" x2="276.6" y2="199"/>
+</g>
+<ellipse cx="314" cy="172" rx="34" ry="54" fill="url(#kiwiSpec)"/>
+</g>
+</g>
+<g stroke="#7a5c3a" stroke-width="2.2" stroke-linecap="round" opacity="0.9">
+<line x1="342" y1="306" x2="349" y2="306"/>
+<line x1="341.3" y1="319.6" x2="345.8" y2="320.1"/>
+<line x1="339.2" y1="333" x2="346" y2="334.5"/>
+<line x1="335.6" y1="346.2" x2="339.9" y2="347.6"/>
+<line x1="330.8" y1="358.9" x2="337.2" y2="361.7"/>
+<line x1="324.6" y1="371" x2="328.5" y2="373.3"/>
+<line x1="317.2" y1="382.4" x2="322.8" y2="386.5"/>
+<line x1="308.6" y1="393" x2="312" y2="396"/>
+<line x1="299" y1="402.6" x2="303.7" y2="407.8"/>
+<line x1="288.4" y1="411.2" x2="291.1" y2="414.8"/>
+<line x1="277" y1="418.6" x2="280.5" y2="424.6"/>
+<line x1="264.9" y1="424.8" x2="266.7" y2="428.9"/>
+<line x1="252.2" y1="429.6" x2="254.3" y2="436.3"/>
+<line x1="239" y1="433.2" x2="240" y2="437.6"/>
+<line x1="225.6" y1="435.3" x2="226.3" y2="442.2"/>
+<line x1="212" y1="436" x2="212" y2="440.5"/>
+<line x1="198.4" y1="435.3" x2="197.7" y2="442.2"/>
+<line x1="185" y1="433.2" x2="184" y2="437.6"/>
+<line x1="171.8" y1="429.6" x2="169.7" y2="436.3"/>
+<line x1="159.1" y1="424.8" x2="157.3" y2="428.9"/>
+<line x1="147" y1="418.6" x2="143.5" y2="424.6"/>
+<line x1="135.6" y1="411.2" x2="132.9" y2="414.8"/>
+<line x1="125" y1="402.6" x2="120.3" y2="407.8"/>
+<line x1="115.4" y1="393" x2="112" y2="396"/>
+<line x1="106.8" y1="382.4" x2="101.2" y2="386.5"/>
+<line x1="99.4" y1="371" x2="95.5" y2="373.3"/>
+<line x1="93.2" y1="358.9" x2="86.8" y2="361.7"/>
+<line x1="88.4" y1="346.2" x2="84.1" y2="347.6"/>
+<line x1="84.8" y1="333" x2="78" y2="334.5"/>
+<line x1="82.7" y1="319.6" x2="78.2" y2="320.1"/>
+<line x1="82" y1="306" x2="75" y2="306"/>
+<line x1="82.7" y1="292.4" x2="78.2" y2="291.9"/>
+<line x1="84.8" y1="279" x2="78" y2="277.5"/>
+<line x1="88.4" y1="265.8" x2="84.1" y2="264.4"/>
+<line x1="93.2" y1="253.1" x2="86.8" y2="250.3"/>
+<line x1="99.4" y1="241" x2="95.5" y2="238.8"/>
+<line x1="106.8" y1="229.6" x2="101.2" y2="225.5"/>
+<line x1="115.4" y1="219" x2="112" y2="216"/>
+<line x1="125" y1="209.4" x2="120.3" y2="204.2"/>
+<line x1="135.6" y1="200.8" x2="132.9" y2="197.2"/>
+<line x1="147" y1="193.4" x2="143.5" y2="187.4"/>
+<line x1="159.1" y1="187.2" x2="157.3" y2="183.1"/>
+<line x1="171.8" y1="182.4" x2="169.7" y2="175.7"/>
+<line x1="185" y1="178.8" x2="184" y2="174.4"/>
+<line x1="198.4" y1="176.7" x2="197.7" y2="169.8"/>
+<line x1="212" y1="176" x2="212" y2="171.5"/>
+<line x1="225.6" y1="176.7" x2="226.3" y2="169.8"/>
+<line x1="239" y1="178.8" x2="240" y2="174.4"/>
+<line x1="252.2" y1="182.4" x2="254.3" y2="175.7"/>
+<line x1="264.9" y1="187.2" x2="266.7" y2="183.1"/>
+<line x1="277" y1="193.4" x2="280.5" y2="187.4"/>
+<line x1="288.4" y1="200.8" x2="291.1" y2="197.2"/>
+<line x1="299" y1="209.4" x2="303.7" y2="204.2"/>
+<line x1="308.6" y1="219" x2="312" y2="216"/>
+<line x1="317.2" y1="229.6" x2="322.8" y2="225.5"/>
+<line x1="324.6" y1="241" x2="328.5" y2="238.7"/>
+<line x1="330.8" y1="253.1" x2="337.2" y2="250.3"/>
+<line x1="335.6" y1="265.8" x2="339.9" y2="264.4"/>
+<line x1="339.2" y1="279" x2="346" y2="277.5"/>
+<line x1="341.3" y1="292.4" x2="345.8" y2="291.9"/>
+</g>
+<circle cx="212" cy="306" r="130" fill="#5f4a2c"/>
+<circle cx="212" cy="306" r="126.5" fill="#96754a"/>
+<circle cx="212" cy="306" r="121" fill="url(#kiwiFlesh)"/>
+<circle cx="212" cy="306" r="119" fill="none" stroke="#dfe9b8" stroke-width="2.5" opacity="0.6"/>
+<line x1="262" y1="306" x2="320" y2="306" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="263.6" y1="312.8" x2="313.1" y2="319.3" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="260.3" y1="318.9" x2="316.3" y2="334" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="260" y1="325.9" x2="306.2" y2="345" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="255.3" y1="331" x2="305.5" y2="360" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="253.3" y1="337.7" x2="292.9" y2="368.1" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="247.4" y1="341.4" x2="288.4" y2="382.4" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="243.7" y1="347.3" x2="274.1" y2="386.9" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="237" y1="349.3" x2="266" y2="399.5" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="231.9" y1="354" x2="251" y2="400.2" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="224.9" y1="354.3" x2="240" y2="410.3" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="218.8" y1="357.6" x2="225.3" y2="407.1" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="212" y1="356" x2="212" y2="414" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="205.2" y1="357.6" x2="198.7" y2="407.1" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="199.1" y1="354.3" x2="184" y2="410.3" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="192.1" y1="354" x2="173" y2="400.2" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="187" y1="349.3" x2="158" y2="399.5" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="180.3" y1="347.3" x2="149.9" y2="386.9" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="176.6" y1="341.4" x2="135.6" y2="382.4" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="170.7" y1="337.7" x2="131.1" y2="368.1" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="168.7" y1="331" x2="118.5" y2="360" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="164" y1="325.9" x2="117.8" y2="345" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="163.7" y1="318.9" x2="107.7" y2="334" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="160.4" y1="312.8" x2="110.9" y2="319.3" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="162" y1="306" x2="104" y2="306" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="160.4" y1="299.2" x2="110.9" y2="292.7" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="163.7" y1="293.1" x2="107.7" y2="278" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="164" y1="286.1" x2="117.8" y2="267" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="168.7" y1="281" x2="118.5" y2="252" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="170.7" y1="274.3" x2="131.1" y2="243.9" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="176.6" y1="270.6" x2="135.6" y2="229.6" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="180.3" y1="264.7" x2="149.9" y2="225.1" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="187" y1="262.7" x2="158" y2="212.5" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="192.1" y1="258" x2="173" y2="211.8" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="199.1" y1="257.7" x2="184" y2="201.7" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="205.2" y1="254.4" x2="198.7" y2="204.9" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="212" y1="256" x2="212" y2="198" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="218.8" y1="254.4" x2="225.3" y2="204.9" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="224.9" y1="257.7" x2="240" y2="201.7" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="231.9" y1="258" x2="251" y2="211.8" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="237" y1="262.7" x2="266" y2="212.5" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="243.7" y1="264.7" x2="274.1" y2="225.1" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="247.4" y1="270.6" x2="288.4" y2="229.6" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="253.3" y1="274.3" x2="292.9" y2="243.9" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="255.3" y1="281" x2="305.5" y2="252" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="260" y1="286.1" x2="306.2" y2="267" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<line x1="260.3" y1="293.1" x2="316.3" y2="278" stroke="#eef5c6" stroke-width="3.5" opacity="0.55"/>
+<line x1="263.6" y1="299.2" x2="313.1" y2="292.7" stroke="#7fb635" stroke-width="2.5" opacity="0.3"/>
+<ellipse cx="212" cy="306" rx="46" ry="50" fill="url(#kiwiCore)"/>
+<ellipse cx="212" cy="306" rx="46" ry="50" fill="none" stroke="#d8ce9d" stroke-width="2" opacity="0.55"/>
+<ellipse cx="274" cy="306" rx="2.7" ry="5.2" fill="#241708" transform="rotate(-90 274 306)"/>
+<ellipse cx="269.3" cy="329.7" rx="2.7" ry="5.2" fill="#241708" transform="rotate(-67.5 269.3 329.7)"/>
+<ellipse cx="255.8" cy="349.8" rx="2.7" ry="5.2" fill="#241708" transform="rotate(-45 255.8 349.8)"/>
+<ellipse cx="235.7" cy="363.3" rx="2.7" ry="5.2" fill="#241708" transform="rotate(-22.5 235.7 363.3)"/>
+<ellipse cx="212" cy="368" rx="2.7" ry="5.2" fill="#241708" transform="rotate(0 212 368)"/>
+<ellipse cx="188.3" cy="363.3" rx="2.7" ry="5.2" fill="#241708" transform="rotate(22.5 188.3 363.3)"/>
+<ellipse cx="168.2" cy="349.8" rx="2.7" ry="5.2" fill="#241708" transform="rotate(45 168.2 349.8)"/>
+<ellipse cx="154.7" cy="329.7" rx="2.7" ry="5.2" fill="#241708" transform="rotate(67.5 154.7 329.7)"/>
+<ellipse cx="150" cy="306" rx="2.7" ry="5.2" fill="#241708" transform="rotate(90 150 306)"/>
+<ellipse cx="154.7" cy="282.3" rx="2.7" ry="5.2" fill="#241708" transform="rotate(112.5 154.7 282.3)"/>
+<ellipse cx="168.2" cy="262.2" rx="2.7" ry="5.2" fill="#241708" transform="rotate(135 168.2 262.2)"/>
+<ellipse cx="188.3" cy="248.7" rx="2.7" ry="5.2" fill="#241708" transform="rotate(157.5 188.3 248.7)"/>
+<ellipse cx="212" cy="244" rx="2.7" ry="5.2" fill="#241708" transform="rotate(180 212 244)"/>
+<ellipse cx="235.7" cy="248.7" rx="2.7" ry="5.2" fill="#241708" transform="rotate(202.5 235.7 248.7)"/>
+<ellipse cx="255.8" cy="262.2" rx="2.7" ry="5.2" fill="#241708" transform="rotate(225 255.8 262.2)"/>
+<ellipse cx="269.3" cy="282.3" rx="2.7" ry="5.2" fill="#241708" transform="rotate(247.5 269.3 282.3)"/>
+<ellipse cx="293" cy="318.8" rx="2.7" ry="5.2" fill="#241708" transform="rotate(-81 293 318.8)"/>
+<ellipse cx="285.6" cy="342.1" rx="2.7" ry="5.2" fill="#241708" transform="rotate(-63.9 285.6 342.1)"/>
+<ellipse cx="271.7" cy="362.2" rx="2.7" ry="5.2" fill="#241708" transform="rotate(-46.7 271.7 362.2)"/>
+<ellipse cx="252.5" cy="377.3" rx="2.7" ry="5.2" fill="#241708" transform="rotate(-29.6 252.5 377.3)"/>
+<ellipse cx="229.6" cy="386.1" rx="2.7" ry="5.2" fill="#241708" transform="rotate(-12.4 229.6 386.1)"/>
+<ellipse cx="205.3" cy="387.7" rx="2.7" ry="5.2" fill="#241708" transform="rotate(4.7 205.3 387.7)"/>
+<ellipse cx="181.5" cy="382.1" rx="2.7" ry="5.2" fill="#241708" transform="rotate(21.9 181.5 382.1)"/>
+<ellipse cx="160.4" cy="369.7" rx="2.7" ry="5.2" fill="#241708" transform="rotate(39 160.4 369.7)"/>
+<ellipse cx="143.9" cy="351.7" rx="2.7" ry="5.2" fill="#241708" transform="rotate(56.1 143.9 351.7)"/>
+<ellipse cx="133.5" cy="329.6" rx="2.7" ry="5.2" fill="#241708" transform="rotate(73.3 133.5 329.6)"/>
+<ellipse cx="130" cy="305.4" rx="2.7" ry="5.2" fill="#241708" transform="rotate(90.4 130 305.4)"/>
+<ellipse cx="133.8" cy="281.2" rx="2.7" ry="5.2" fill="#241708" transform="rotate(107.6 133.8 281.2)"/>
+<ellipse cx="144.6" cy="259.3" rx="2.7" ry="5.2" fill="#241708" transform="rotate(124.7 144.6 259.3)"/>
+<ellipse cx="161.4" cy="241.5" rx="2.7" ry="5.2" fill="#241708" transform="rotate(141.9 161.4 241.5)"/>
+<ellipse cx="182.6" cy="229.4" rx="2.7" ry="5.2" fill="#241708" transform="rotate(159 182.6 229.4)"/>
+<ellipse cx="206.5" cy="224.2" rx="2.7" ry="5.2" fill="#241708" transform="rotate(176.1 206.5 224.2)"/>
+<ellipse cx="230.8" cy="226.2" rx="2.7" ry="5.2" fill="#241708" transform="rotate(193.3 230.8 226.2)"/>
+<ellipse cx="253.5" cy="235.3" rx="2.7" ry="5.2" fill="#241708" transform="rotate(210.4 253.5 235.3)"/>
+<ellipse cx="272.5" cy="250.7" rx="2.7" ry="5.2" fill="#241708" transform="rotate(227.6 272.5 250.7)"/>
+<ellipse cx="286.1" cy="271" rx="2.7" ry="5.2" fill="#241708" transform="rotate(244.7 286.1 271)"/>
+<ellipse cx="293.2" cy="294.4" rx="2.7" ry="5.2" fill="#241708" transform="rotate(261.9 293.2 294.4)"/>
+<path d="M318.3 277.5 A110 110 0 0 1 183.5 412.3" fill="none" stroke="#679d2a" stroke-width="18" opacity="0.22" stroke-linecap="round"/>
+<path d="M105.6 287.2 A108 108 0 0 1 197 199.1" fill="none" stroke="#ffffff" stroke-width="14" opacity="0.15" stroke-linecap="round"/>
+<ellipse cx="162" cy="250" rx="50" ry="70" fill="url(#kiwiSpec)" transform="rotate(-28 162 250)" opacity="0.65"/>
+</svg>

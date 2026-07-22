@@ -1,0 +1,248 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#ffffff"/>
+<ellipse cx="256" cy="452" rx="158" ry="20" fill="#000000" opacity="0.08"/>
+<defs>
+<radialGradient id="jfBase" cx="0.33" cy="0.28" r="1">
+<stop offset="0" stop-color="#b9c153"/>
+<stop offset="0.55" stop-color="#9aab46"/>
+<stop offset="1" stop-color="#6f8a37"/>
+</radialGradient>
+<radialGradient id="jfBump" cx="0.35" cy="0.3" r="0.75">
+<stop offset="0" stop-color="#e2e388"/>
+<stop offset="0.5" stop-color="#bcc45e"/>
+<stop offset="1" stop-color="#8da33f"/>
+</radialGradient>
+<radialGradient id="jfBumpG" cx="0.35" cy="0.3" r="0.75">
+<stop offset="0" stop-color="#cdd677"/>
+<stop offset="0.5" stop-color="#a5b64f"/>
+<stop offset="1" stop-color="#7b943c"/>
+</radialGradient>
+<radialGradient id="jfShade" cx="0.33" cy="0.28" r="0.95">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
+<stop offset="0.3" stop-color="#ffffff" stop-opacity="0.07"/>
+<stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.8" stop-color="#42601f" stop-opacity="0.28"/>
+<stop offset="1" stop-color="#324c18" stop-opacity="0.55"/>
+</radialGradient>
+<radialGradient id="jfSpec" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.32"/>
+<stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="jfStem" x1="0" y1="0" x2="1" y2="0.2">
+<stop offset="0" stop-color="#93a24c"/>
+<stop offset="1" stop-color="#67792f"/>
+</linearGradient>
+<clipPath id="jfClip">
+<path d="M256 94 C176 94 114 152 106 252 C100 344 148 432 256 438 C364 432 412 344 406 252 C398 152 336 94 256 94 Z"/>
+</clipPath>
+</defs>
+<path d="M238 116 C235 88 237 68 245 56 C252 46 268 46 275 56 C283 68 285 88 281 116 C267 124 249 124 238 116 Z" fill="url(#jfStem)"/>
+<path d="M263 116 C261 88 263 68 268 54 L275 56 C283 68 285 88 281 116 Z" fill="#556628" opacity="0.7"/>
+<ellipse cx="259" cy="55" rx="16" ry="6.5" fill="#c9c37a"/>
+<ellipse cx="259" cy="55" rx="10" ry="4" fill="#a3a058"/>
+<g clip-path="url(#jfClip)">
+<rect x="0" y="0" width="512" height="512" fill="url(#jfBase)"/>
+<circle cx="250" cy="101.3" r="7.9" fill="url(#jfBumpG)"/>
+<circle cx="175" cy="127.1" r="7.8" fill="url(#jfBumpG)"/>
+<circle cx="205.5" cy="127.2" r="8.9" fill="url(#jfBumpG)"/>
+<circle cx="234.6" cy="124.5" r="9.4" fill="url(#jfBumpG)"/>
+<circle cx="262.8" cy="126.8" r="9.7" fill="url(#jfBumpG)"/>
+<circle cx="293.1" cy="127.9" r="9.3" fill="url(#jfBumpG)"/>
+<circle cx="326.2" cy="124.1" r="8" fill="url(#jfBumpG)"/>
+<circle cx="159.1" cy="151.3" r="8.3" fill="url(#jfBumpG)"/>
+<circle cx="188.6" cy="151.6" r="9.7" fill="url(#jfBumpG)"/>
+<circle cx="219.2" cy="150.7" r="10.6" fill="url(#jfBumpG)"/>
+<circle cx="248.5" cy="152.3" r="11.1" fill="url(#jfBumpG)"/>
+<circle cx="279.9" cy="153.3" r="11" fill="url(#jfBumpG)"/>
+<circle cx="310.4" cy="153.6" r="10.3" fill="url(#jfBumpG)"/>
+<circle cx="340.4" cy="150.9" r="8.9" fill="url(#jfBumpG)"/>
+<circle cx="146.5" cy="177.7" r="8.7" fill="url(#jfBumpG)"/>
+<circle cx="172.8" cy="178.8" r="10.3" fill="url(#jfBumpG)"/>
+<circle cx="204.8" cy="179.7" r="11.6" fill="url(#jfBumpG)"/>
+<circle cx="233.5" cy="176.5" r="12.1" fill="url(#jfBumpG)"/>
+<circle cx="265" cy="178" r="12.2" fill="url(#jfBumpG)"/>
+<circle cx="294.3" cy="178.9" r="11.9" fill="url(#jfBumpG)"/>
+<circle cx="327.2" cy="175.8" r="10.7" fill="url(#jfBumpG)"/>
+<circle cx="355.4" cy="178.3" r="9.4" fill="url(#jfBumpG)"/>
+<circle cx="131.7" cy="205.5" r="8.6" fill="url(#jfBumpG)"/>
+<circle cx="162.2" cy="203.4" r="10.5" fill="url(#jfBumpG)"/>
+<circle cx="188" cy="204" r="11.8" fill="url(#jfBumpG)"/>
+<circle cx="218.6" cy="203" r="12.7" fill="url(#jfBumpG)"/>
+<circle cx="247.8" cy="204.5" r="13.1" fill="url(#jfBumpG)"/>
+<circle cx="277.9" cy="204.9" r="13" fill="url(#jfBumpG)"/>
+<circle cx="309.4" cy="204.9" r="12.3" fill="url(#jfBumpG)"/>
+<circle cx="340.6" cy="203.7" r="11" fill="url(#jfBumpG)"/>
+<circle cx="369.5" cy="203.9" r="9.3" fill="url(#jfBumpG)"/>
+<circle cx="116.9" cy="229.3" r="8" fill="url(#jfBump)"/>
+<circle cx="146.5" cy="231.8" r="10.2" fill="url(#jfBump)"/>
+<circle cx="176.9" cy="229.6" r="11.9" fill="url(#jfBump)"/>
+<circle cx="204.9" cy="228" r="12.9" fill="url(#jfBump)"/>
+<circle cx="235.9" cy="227.9" r="13.6" fill="url(#jfBump)"/>
+<circle cx="264.5" cy="229.3" r="13.7" fill="url(#jfBump)"/>
+<circle cx="297.1" cy="229.4" r="13.2" fill="url(#jfBump)"/>
+<circle cx="324" cy="232.4" r="12.4" fill="url(#jfBump)"/>
+<circle cx="352.9" cy="232.1" r="11" fill="url(#jfBump)"/>
+<circle cx="384.9" cy="230.4" r="8.8" fill="url(#jfBump)"/>
+<circle cx="127.6" cy="258.2" r="9.1" fill="url(#jfBump)"/>
+<circle cx="161.3" cy="254.4" r="11.3" fill="url(#jfBump)"/>
+<circle cx="188" cy="254.3" r="12.6" fill="url(#jfBump)"/>
+<circle cx="221.4" cy="255.9" r="13.6" fill="url(#jfBump)"/>
+<circle cx="250.3" cy="257.4" r="14" fill="url(#jfBump)"/>
+<circle cx="281.1" cy="253.7" r="13.8" fill="url(#jfBump)"/>
+<circle cx="309.7" cy="255.5" r="13.1" fill="url(#jfBump)"/>
+<circle cx="342.5" cy="258.4" r="11.8" fill="url(#jfBump)"/>
+<circle cx="372.3" cy="257.9" r="10" fill="url(#jfBump)"/>
+<circle cx="401.4" cy="257.6" r="7.7" fill="url(#jfBump)"/>
+<circle cx="114.9" cy="283.4" r="8" fill="url(#jfBump)"/>
+<circle cx="144.9" cy="283.8" r="10.3" fill="url(#jfBump)"/>
+<circle cx="172.7" cy="283.2" r="11.9" fill="url(#jfBump)"/>
+<circle cx="204.4" cy="280.8" r="13.2" fill="url(#jfBump)"/>
+<circle cx="235.3" cy="283.3" r="13.8" fill="url(#jfBump)"/>
+<circle cx="266.7" cy="280.3" r="13.9" fill="url(#jfBump)"/>
+<circle cx="294.8" cy="283.8" r="13.5" fill="url(#jfBump)"/>
+<circle cx="325.3" cy="282.1" r="12.5" fill="url(#jfBump)"/>
+<circle cx="356.1" cy="283" r="11" fill="url(#jfBump)"/>
+<circle cx="385.4" cy="281.7" r="9" fill="url(#jfBump)"/>
+<circle cx="131.2" cy="306.2" r="9" fill="url(#jfBump)"/>
+<circle cx="160.2" cy="307.2" r="10.9" fill="url(#jfBump)"/>
+<circle cx="187.5" cy="310" r="12.2" fill="url(#jfBump)"/>
+<circle cx="220.6" cy="305.6" r="13.3" fill="url(#jfBump)"/>
+<circle cx="249.2" cy="306.5" r="13.6" fill="url(#jfBump)"/>
+<circle cx="282" cy="310.1" r="13.4" fill="url(#jfBump)"/>
+<circle cx="307.8" cy="310.4" r="12.8" fill="url(#jfBump)"/>
+<circle cx="341.9" cy="310" r="11.4" fill="url(#jfBump)"/>
+<circle cx="371.7" cy="306" r="9.7" fill="url(#jfBump)"/>
+<circle cx="143.5" cy="332.7" r="9.3" fill="url(#jfBump)"/>
+<circle cx="173.9" cy="332.1" r="11" fill="url(#jfBump)"/>
+<circle cx="205.6" cy="333.7" r="12.2" fill="url(#jfBump)"/>
+<circle cx="232.9" cy="334.7" r="12.8" fill="url(#jfBump)"/>
+<circle cx="264.1" cy="336" r="12.9" fill="url(#jfBump)"/>
+<circle cx="292.9" cy="334.7" r="12.5" fill="url(#jfBump)"/>
+<circle cx="323.5" cy="335.9" r="11.6" fill="url(#jfBump)"/>
+<circle cx="354.8" cy="332.8" r="10.1" fill="url(#jfBump)"/>
+<circle cx="383.2" cy="335.5" r="8.1" fill="url(#jfBump)"/>
+<circle cx="159.6" cy="358.2" r="9.4" fill="url(#jfBump)"/>
+<circle cx="188" cy="362.4" r="10.6" fill="url(#jfBump)"/>
+<circle cx="222.4" cy="359.3" r="11.7" fill="url(#jfBump)"/>
+<circle cx="247.9" cy="358" r="12.1" fill="url(#jfBump)"/>
+<circle cx="278.6" cy="359.8" r="11.9" fill="url(#jfBump)"/>
+<circle cx="307.7" cy="362" r="11.2" fill="url(#jfBump)"/>
+<circle cx="338.6" cy="360.8" r="10" fill="url(#jfBump)"/>
+<circle cx="371.6" cy="362.3" r="8" fill="url(#jfBump)"/>
+<circle cx="174.5" cy="384.7" r="8.9" fill="url(#jfBump)"/>
+<circle cx="205.1" cy="387.3" r="9.9" fill="url(#jfBump)"/>
+<circle cx="236.9" cy="386.3" r="10.7" fill="url(#jfBump)"/>
+<circle cx="264.9" cy="385" r="10.8" fill="url(#jfBump)"/>
+<circle cx="294.1" cy="385.1" r="10.4" fill="url(#jfBump)"/>
+<circle cx="323.2" cy="388" r="9.3" fill="url(#jfBump)"/>
+<circle cx="354.3" cy="387.9" r="7.8" fill="url(#jfBump)"/>
+<circle cx="191.9" cy="411.6" r="8.1" fill="url(#jfBump)"/>
+<circle cx="221.7" cy="414.5" r="8.7" fill="url(#jfBump)"/>
+<circle cx="250" cy="412.4" r="9.2" fill="url(#jfBump)"/>
+<circle cx="281" cy="410.5" r="9.2" fill="url(#jfBump)"/>
+<circle cx="308.2" cy="411.6" r="8.5" fill="url(#jfBump)"/>
+<g fill="#5c7429" opacity="0.5">
+<circle cx="250" cy="101.3" r="1"/>
+<circle cx="175" cy="127.1" r="0.9"/>
+<circle cx="205.5" cy="127.2" r="1.1"/>
+<circle cx="234.6" cy="124.5" r="1.1"/>
+<circle cx="262.8" cy="126.8" r="1.2"/>
+<circle cx="293.1" cy="127.9" r="1.1"/>
+<circle cx="326.2" cy="124.1" r="1"/>
+<circle cx="159.1" cy="151.3" r="1"/>
+<circle cx="188.6" cy="151.6" r="1.2"/>
+<circle cx="219.2" cy="150.7" r="1.3"/>
+<circle cx="248.5" cy="152.3" r="1.3"/>
+<circle cx="279.9" cy="153.3" r="1.3"/>
+<circle cx="310.4" cy="153.6" r="1.3"/>
+<circle cx="340.4" cy="150.9" r="1.1"/>
+<circle cx="146.5" cy="177.7" r="1.1"/>
+<circle cx="172.8" cy="178.8" r="1.2"/>
+<circle cx="204.8" cy="179.7" r="1.4"/>
+<circle cx="233.5" cy="176.5" r="1.5"/>
+<circle cx="265" cy="178" r="1.5"/>
+<circle cx="294.3" cy="178.9" r="1.4"/>
+<circle cx="327.2" cy="175.8" r="1.3"/>
+<circle cx="355.4" cy="178.3" r="1.1"/>
+<circle cx="131.7" cy="205.5" r="1"/>
+<circle cx="162.2" cy="203.4" r="1.3"/>
+<circle cx="188" cy="204" r="1.4"/>
+<circle cx="218.6" cy="203" r="1.5"/>
+<circle cx="247.8" cy="204.5" r="1.6"/>
+<circle cx="277.9" cy="204.9" r="1.6"/>
+<circle cx="309.4" cy="204.9" r="1.5"/>
+<circle cx="340.6" cy="203.7" r="1.3"/>
+<circle cx="369.5" cy="203.9" r="1.1"/>
+<circle cx="116.9" cy="229.3" r="1"/>
+<circle cx="146.5" cy="231.8" r="1.2"/>
+<circle cx="176.9" cy="229.6" r="1.4"/>
+<circle cx="204.9" cy="228" r="1.6"/>
+<circle cx="235.9" cy="227.9" r="1.6"/>
+<circle cx="264.5" cy="229.3" r="1.7"/>
+<circle cx="297.1" cy="229.4" r="1.6"/>
+<circle cx="324" cy="232.4" r="1.5"/>
+<circle cx="352.9" cy="232.1" r="1.3"/>
+<circle cx="384.9" cy="230.4" r="1.1"/>
+<circle cx="127.6" cy="258.2" r="1.1"/>
+<circle cx="161.3" cy="254.4" r="1.4"/>
+<circle cx="188" cy="254.3" r="1.5"/>
+<circle cx="221.4" cy="255.9" r="1.7"/>
+<circle cx="250.3" cy="257.4" r="1.7"/>
+<circle cx="281.1" cy="253.7" r="1.7"/>
+<circle cx="309.7" cy="255.5" r="1.6"/>
+<circle cx="342.5" cy="258.4" r="1.4"/>
+<circle cx="372.3" cy="257.9" r="1.2"/>
+<circle cx="401.4" cy="257.6" r="0.9"/>
+<circle cx="114.9" cy="283.4" r="1"/>
+<circle cx="144.9" cy="283.8" r="1.2"/>
+<circle cx="172.7" cy="283.2" r="1.4"/>
+<circle cx="204.4" cy="280.8" r="1.6"/>
+<circle cx="235.3" cy="283.3" r="1.7"/>
+<circle cx="266.7" cy="280.3" r="1.7"/>
+<circle cx="294.8" cy="283.8" r="1.6"/>
+<circle cx="325.3" cy="282.1" r="1.5"/>
+<circle cx="356.1" cy="283" r="1.3"/>
+<circle cx="385.4" cy="281.7" r="1.1"/>
+<circle cx="131.2" cy="306.2" r="1.1"/>
+<circle cx="160.2" cy="307.2" r="1.3"/>
+<circle cx="187.5" cy="310" r="1.5"/>
+<circle cx="220.6" cy="305.6" r="1.6"/>
+<circle cx="249.2" cy="306.5" r="1.7"/>
+<circle cx="282" cy="310.1" r="1.6"/>
+<circle cx="307.8" cy="310.4" r="1.6"/>
+<circle cx="341.9" cy="310" r="1.4"/>
+<circle cx="371.7" cy="306" r="1.2"/>
+<circle cx="143.5" cy="332.7" r="1.1"/>
+<circle cx="173.9" cy="332.1" r="1.3"/>
+<circle cx="205.6" cy="333.7" r="1.5"/>
+<circle cx="232.9" cy="334.7" r="1.6"/>
+<circle cx="264.1" cy="336" r="1.6"/>
+<circle cx="292.9" cy="334.7" r="1.5"/>
+<circle cx="323.5" cy="335.9" r="1.4"/>
+<circle cx="354.8" cy="332.8" r="1.2"/>
+<circle cx="383.2" cy="335.5" r="1"/>
+<circle cx="159.6" cy="358.2" r="1.1"/>
+<circle cx="188" cy="362.4" r="1.3"/>
+<circle cx="222.4" cy="359.3" r="1.4"/>
+<circle cx="247.9" cy="358" r="1.5"/>
+<circle cx="278.6" cy="359.8" r="1.4"/>
+<circle cx="307.7" cy="362" r="1.4"/>
+<circle cx="338.6" cy="360.8" r="1.2"/>
+<circle cx="371.6" cy="362.3" r="1"/>
+<circle cx="174.5" cy="384.7" r="1.1"/>
+<circle cx="205.1" cy="387.3" r="1.2"/>
+<circle cx="236.9" cy="386.3" r="1.3"/>
+<circle cx="264.9" cy="385" r="1.3"/>
+<circle cx="294.1" cy="385.1" r="1.3"/>
+<circle cx="323.2" cy="388" r="1.1"/>
+<circle cx="354.3" cy="387.9" r="1"/>
+<circle cx="191.9" cy="411.6" r="1"/>
+<circle cx="221.7" cy="414.5" r="1.1"/>
+<circle cx="250" cy="412.4" r="1.1"/>
+<circle cx="281" cy="410.5" r="1.1"/>
+<circle cx="308.2" cy="411.6" r="1"/>
+</g>
+<path d="M256 94 C176 94 114 152 106 252 C100 344 148 432 256 438 C364 432 412 344 406 252 C398 152 336 94 256 94 Z" fill="url(#jfShade)"/>
+<ellipse cx="185" cy="195" rx="58" ry="92" fill="url(#jfSpec)" transform="rotate(-22 185 195)"/>
+</g>
+</svg>

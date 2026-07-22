@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#ffffff"/>
+<ellipse cx="256" cy="452" rx="130" ry="20" fill="#000000" opacity="0.08"/>
+<defs>
+<radialGradient id="pearBody" cx="0.35" cy="0.42" r="0.95">
+<stop offset="0" stop-color="#eef0a0"/>
+<stop offset="0.3" stop-color="#dde26c"/>
+<stop offset="0.62" stop-color="#bcce52"/>
+<stop offset="0.85" stop-color="#9cb83e"/>
+<stop offset="1" stop-color="#7fa332"/>
+</radialGradient>
+<linearGradient id="pearLeaf" x1="1" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#6fb43e"/>
+<stop offset="1" stop-color="#3f8a2c"/>
+</linearGradient>
+<radialGradient id="pearSpec" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
+<stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+</radialGradient>
+<clipPath id="pearClip">
+<path d="M256 118 C238 118 228 132 224 156 C218 196 208 232 186 264 C152 310 140 352 152 386 C168 424 210 442 256 442 C302 442 344 424 360 386 C372 352 360 310 326 264 C304 232 294 196 288 156 C284 132 274 118 256 118 Z"/>
+</clipPath>
+</defs>
+<g clip-path="url(#pearClip)">
+<rect x="0" y="0" width="512" height="512" fill="#6d8f28"/>
+<path transform="translate(-24,-18)" d="M256 118 C238 118 228 132 224 156 C218 196 208 232 186 264 C152 310 140 352 152 386 C168 424 210 442 256 442 C302 442 344 424 360 386 C372 352 360 310 326 264 C304 232 294 196 288 156 C284 132 274 118 256 118 Z" fill="#8fae35"/>
+<path transform="translate(-10,-8)" d="M256 118 C238 118 228 132 224 156 C218 196 208 232 186 264 C152 310 140 352 152 386 C168 424 210 442 256 442 C302 442 344 424 360 386 C372 352 360 310 326 264 C304 232 294 196 288 156 C284 132 274 118 256 118 Z" fill="url(#pearBody)"/>
+<g fill="#7fa332" opacity="0.35">
+<circle cx="245" cy="170" r="1.8"/><circle cx="265" cy="185" r="2"/><circle cx="240" cy="205" r="1.8"/><circle cx="270" cy="215" r="2.2"/>
+<circle cx="225" cy="235" r="1.8"/><circle cx="260" cy="240" r="2"/><circle cx="290" cy="238" r="1.8"/><circle cx="205" cy="270" r="2"/>
+<circle cx="240" cy="275" r="2.2"/><circle cx="275" cy="270" r="1.8"/><circle cx="308" cy="282" r="2"/><circle cx="180" cy="310" r="2"/>
+<circle cx="215" cy="310" r="2.2"/><circle cx="250" cy="305" r="1.8"/><circle cx="285" cy="305" r="2.2"/><circle cx="318" cy="315" r="2"/>
+<circle cx="190" cy="345" r="2"/><circle cx="225" cy="350" r="2.2"/><circle cx="260" cy="345" r="1.8"/><circle cx="295" cy="350" r="2.2"/>
+<circle cx="328" cy="345" r="2"/><circle cx="210" cy="385" r="2"/><circle cx="250" cy="390" r="2.2"/><circle cx="290" cy="385" r="2"/>
+<circle cx="172" cy="362" r="1.8"/><circle cx="325" cy="375" r="1.8"/>
+</g>
+<g fill="#f5f5c8" opacity="0.4">
+<circle cx="205" cy="295" r="1.8"/><circle cx="188" cy="330" r="1.8"/><circle cx="228" cy="192" r="1.6"/><circle cx="222" cy="260" r="1.6"/>
+<circle cx="238" cy="150" r="1.6"/><circle cx="200" cy="318" r="1.6"/>
+</g>
+<ellipse cx="212" cy="188" rx="20" ry="42" fill="url(#pearSpec)" transform="rotate(14 212 188)"/>
+<ellipse cx="196" cy="330" rx="46" ry="66" fill="url(#pearSpec)" transform="rotate(18 196 330)"/>
+<ellipse cx="256" cy="124" rx="26" ry="10" fill="#6d8f28" opacity="0.35"/>
+</g>
+<path d="M250 128 C248 104 252 86 263 71 C267 65 277 68 277 76 C268 90 266 108 268 126 C262 132 254 132 250 128 Z" fill="#7a5230"/>
+<path d="M260 127 C259 104 262 88 270 73 L277 76 C268 90 266 108 268 126 Z" fill="#5b3a21" opacity="0.85"/>
+<path d="M246 112 C216 76 162 64 126 82 C134 122 184 146 224 138 C240 134 248 126 246 112 Z" fill="url(#pearLeaf)"/>
+<path d="M246 112 C216 76 162 64 126 82 C162 76 210 86 236 122 Z" fill="#8fc456" opacity="0.55"/>
+<g fill="none" stroke="#2f732a" stroke-linecap="round">
+<path d="M240 116 C212 88 172 76 132 84" stroke-width="3" opacity="0.6"/>
+<path d="M210 102 C206 110 204 118 204 124" stroke-width="2" opacity="0.45"/>
+<path d="M186 92 C182 100 180 108 180 114" stroke-width="2" opacity="0.45"/>
+<path d="M162 86 C158 92 156 100 156 106" stroke-width="2" opacity="0.45"/>
+</g>
+</svg>
