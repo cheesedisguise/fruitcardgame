@@ -510,15 +510,20 @@ async function tutorialScreen(ctx, user, topic = 'basics') {
       return `${temoji(key)} ${TYPES[key].name} beats ${temoji(next)} ${TYPES[next].name}`;
     }).join('\n');
     embed
-      .setTitle('🎓 Tutorial — Battling')
+      .setTitle('🎓 Tutorial — Battling (the Clash system)')
       .setDescription(
         `⚔️ Battle with \`fbattle @friend\` or matchmake with **Find Battle** — matches run in private threads, even across servers!\n\n` +
-          `**1.** Draft up to ${config.TEAM_SIZE} fruits within the **${config.TEAM_POINTS}-point budget** (Common 1pt → Mythic 6pt) — rare cards are stronger but cost more, so mixed teams rule. Outgunned anyway? The weaker team starts with bonus ⚡\n` +
-          `**2.** You gain **1⚡ energy** at the start of each turn (bank up to ${config.POWER_CAP})\n` +
-          `**3.** Spend it on your fruit's printed moves — light attacks cost 1-2⚡, signature moves 2-4⚡, many flip coins Pokémon-style (Lucky Strike hits big or whiffs; Cascade flips until tails!) — plus Guard (1⚡), Retreat (1⚡), or Charge (+1⚡)\n` +
-          `**4.** Knock out all ${config.TEAM_SIZE} enemy fruits to win coins!\n\n` +
+          `**1. Draft** up to ${config.TEAM_SIZE} fruits within the **${config.TEAM_POINTS}-point budget** (Common 1pt → Mythic 6pt). Outgunned? The weaker team starts with bonus ⚡\n` +
+          `**2. Clash!** Every round, BOTH players secretly pick an action — then the round reveals and resolves at once:\n` +
+          `> ⚔️ **Strike** — your light move (1-2⚡, some flip coins)\n` +
+          `> ✨ **Special** — your signature move (2-4⚡, big effects & gambles)\n` +
+          `> 🛡️ **Guard** — blocks 70% of a Strike and counters!\n` +
+          `> ⚡ **Charge** — bank +2⚡\n` +
+          `> 🔄 **Retreat** — swap fruits, dodging any Strike\n` +
+          `**3. Mind games:** Guard beats Strike · Strike punishes Charge (×1.5!) · Special BREAKS Guard (+25%) · Retreat dodges Strike but eats Specials\n` +
+          `**4.** Win net damage in a round to build 🔥 momentum — three in a row and you're **FIRED UP** (next hit ×1.5). Every 3rd round a random **arena event** shakes things up (storms, gales, bounties...)\n\n` +
           `**Type matchups** (×1.5 damage, and each type resists the one it beats ×0.75):\n${chart}\n\n` +
-          `*Tip: check a card's Matchups before drafting — a well-typed team wins uphill fights.*`
+          `*Tip: read your opponent. A charger is begging to be Struck — but they know that too...*`
       );
   } else if (topic === 'market') {
     embed

@@ -92,10 +92,9 @@ class BattleManager {
       threads: [],
       announcements: [], // origin-channel messages updated with the result
       phase: 'pick',
-      turn: null,
-      turnCount: 0,
-      pendingReplace: null, // uid that must send in a new fruit
-      switching: null, // uid mid-switch (choosing a bench target)
+      round: 0,
+      choices: {}, // uid -> { verb, target? } — secret until both are in
+      event: null, // active arena event this round
       imagePair: null,
       log: [],
       timer: null,
@@ -109,6 +108,8 @@ class BattleManager {
         power: 0,
         shield: 0,
         atkBonus: 0,
+        momentum: 0,
+        fired: false,
       };
     }
     this.battles.set(id, battle);
@@ -322,17 +323,29 @@ class BattleManager {
     return this.activeMon(p).fruit.atk + p.atkBonus;
   }
 
+  // ── Arena events (roll every few rounds, last one round) ─────────
+
+  static EVENTS = [
+    { id: 'storm', text: '🌧 **Juice Storm** — all damage +30% this round!', dmgMult: 1.3 },
+    { id: 'gale', text: '🌪 **Wild Gale** — every attack must flip a coin to land!', flipToHit: true },
+    { id: 'bloom', text: '🌱 **Super Bloom** — all healing doubled, and everyone mends 10 HP!', healMult: 2, endHeal: 10 },
+    { id: 'surge', text: '⚡ **Power Surge** — all energy gains doubled this round!', energyMult: 2 },
+    { id: 'aim', text: '🎯 **True Aim** — type matchups count double (weak ×2, resist ×0.5)!', typeBoost: true },
+    { id: 'honey', text: '🍯 **Golden Hour** — whoever wins this round pockets 25 bonus coins!', bounty: 25 },
+  ];
+
   playerBlock(battle, uid) {
     const p = battle.players[uid];
     const mon = this.activeMon(p);
     const type = TYPES[mon.fruit.type];
-    const turnMark = battle.phase === 'fight' && battle.turn === uid ? ' ⬅️' : '';
+    const locked = battle.phase === 'fight' && battle.choices[uid] ? ' ✅ *locked in*' : battle.phase === 'fight' ? ' 🤔 *choosing...*' : '';
     const lines = [
-      `${remoji(mon.fruit.rarity)} **${p.user.displayName}** — *${mon.fruit.name}* ${type.emoji}${turnMark}`,
+      `${remoji(mon.fruit.rarity)} **${p.user.displayName}** — *${mon.fruit.name}* ${type.emoji}${locked}`,
       `${hpBar(mon.hp, mon.maxHp)} **${mon.hp}**/${mon.maxHp}` +
         `  ${gemoji('energy', '⚡')}${p.power}` +
         (p.shield > 0 ? `  ${gemoji('shield', '🛡️')}${p.shield}` : '') +
-        (p.atkBonus > 0 ? `  ${gemoji('ripen', '📈')}+${p.atkBonus}` : ''),
+        (p.atkBonus > 0 ? `  ${gemoji('ripen', '📈')}+${p.atkBonus}` : '') +
+        (p.fired ? '  🔥**FIRED UP!**' : p.momentum > 0 ? `  🔥${'▮'.repeat(p.momentum)}${'▯'.repeat(config.CLASH.MOMENTUM_MAX - p.momentum)}` : ''),
     ];
     const bench = p.team
       .map((m, i) => ({ m, i }))
@@ -349,129 +362,82 @@ class BattleManager {
   }
 
   fightEmbed(battle) {
-    const current = battle.players[battle.turn];
     const activeA = this.activeMon(battle.players[battle.order[0]]);
     const activeB = this.activeMon(battle.players[battle.order[1]]);
-    return new EmbedBuilder()
-      .setColor(RARITIES[this.activeMon(current).fruit.rarity].color)
-      .setTitle(`⚔️ ${activeA.fruit.name}  vs  ${activeB.fruit.name}`)
-      .setThumbnail(avatarOf(current.user))
-      .setDescription(battle.order.map((uid) => this.playerBlock(battle, uid)).join('\n\n'))
-      .addFields({ name: '📜 Battle Log', value: battle.log.slice(-5).join('\n') || '*The battle begins!*' })
-      .setFooter({ text: `Turn ${battle.turnCount + 1} · ${current.user.displayName} is up` })
+    const embed = new EmbedBuilder()
+      .setColor(battle.event ? 0xffc107 : 0xe74c3c)
+      .setTitle(`⚔️ Round ${battle.round} — ${activeA.fruit.name} vs ${activeB.fruit.name}`)
+      .setDescription(
+        (battle.event ? `${battle.event.text}\n\n` : '') +
+          battle.order.map((uid) => this.playerBlock(battle, uid)).join('\n\n')
+      )
+      .addFields({ name: '📜 Battle Log', value: battle.log.slice(-6).join('\n') || '*The battle begins!*' })
+      .setFooter({
+        text: 'Choose secretly — the round resolves when both lock in! Guard beats Strike · Strike punishes Charge · Special breaks Guard · Retreat dodges Strike',
+      })
       .setImage('attachment://battle.png');
+    return embed;
   }
 
+  // Both players share the same buttons; presses are validated per player.
+  // Single-player views (cross-server threads) get tailored disabled states.
   fightComponents(battle, view) {
-    const turnPlayer = battle.players[battle.turn];
-    const local = view.localIds.includes(battle.turn);
-
-    // Fainted active: that player must send in a replacement.
-    if (battle.pendingReplace) {
-      const rp = battle.players[battle.pendingReplace];
-      if (view.localIds.includes(battle.pendingReplace)) {
-        const buttons = rp.team
-          .map((m, i) => ({ m, i }))
-          .filter(({ m, i }) => i !== rp.active && m.hp > 0)
-          .map(({ m, i }) =>
-            new ButtonBuilder()
-              .setCustomId(`battle:${battle.id}:replace:${i}`)
-              .setLabel(`Send in ${m.fruit.name} (${m.hp} HP)`)
-              .setStyle(ButtonStyle.Primary)
-              .setEmoji(remoji(m.fruit.rarity))
-          );
-        return [new ActionRowBuilder().addComponents(buttons.slice(0, 5))];
-      }
-      return [
-        new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId(`battle:${battle.id}:noop`)
-            .setLabel(`⌛ ${rp.user.displayName} is sending in a new fruit...`)
-            .setStyle(ButtonStyle.Secondary)
-            .setDisabled(true)
-        ),
-      ];
+    const solo = view.localIds.length === 1 ? battle.players[view.localIds[0]] : null;
+    let quickLabel = 'Strike';
+    let sigLabel = 'Special';
+    let quickDisabled = false;
+    let sigDisabled = false;
+    let retreatDisabled = false;
+    if (solo) {
+      const mon = this.activeMon(solo);
+      const moves = movesFor(mon.fruit);
+      const atk = mon.fruit.atk + solo.atkBonus;
+      const scale = (printed) => round5((printed / mon.fruit.atk) * atk);
+      const sig = moves.signature;
+      const sigInfo =
+        sig.dmg != null
+          ? `${scale(sig.dmg)}${['flurry', 'cascade'].includes(sig.kind) ? '/heads' : sig.kind === 'gamble' ? '?' : ''}`
+          : sig.heal != null
+            ? `heal ${sig.heal}`
+            : `+${sig.buff} ATK`;
+      quickLabel = `${moves.quick.name} ${scale(moves.quick.dmg)}${moves.quick.flips === 2 ? '/heads' : moves.quick.flips === 1 ? '?' : ''} ·${moves.quick.cost}⚡`;
+      sigLabel = `${sig.name} ${sigInfo} ·${sig.cost}⚡`;
+      quickDisabled = solo.power < moves.quick.cost || !!battle.choices[solo.user.id];
+      sigDisabled = solo.power < sig.cost || !!battle.choices[solo.user.id];
+      retreatDisabled = !solo.team.some((m, i) => i !== solo.active && m.hp > 0) || !!battle.choices[solo.user.id];
     }
-
-    if (!local) {
-      return [
-        new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId(`battle:${battle.id}:noop`)
-            .setLabel(`⌛ Waiting for ${turnPlayer.user.displayName}...`)
-            .setStyle(ButtonStyle.Secondary)
-            .setDisabled(true)
-        ),
-      ];
-    }
-
-    // Mid-switch: choosing a bench target.
-    if (battle.switching === battle.turn) {
-      const p = turnPlayer;
-      const buttons = p.team
-        .map((m, i) => ({ m, i }))
-        .filter(({ m, i }) => i !== p.active && m.hp > 0)
-        .map(({ m, i }) =>
-          new ButtonBuilder()
-            .setCustomId(`battle:${battle.id}:switchto:${i}`)
-            .setLabel(`${m.fruit.name} (${m.hp} HP)`)
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji(remoji(m.fruit.rarity))
-        );
-      buttons.push(
-        new ButtonBuilder().setCustomId(`battle:${battle.id}:cancelswitch`).setLabel('Cancel').setStyle(ButtonStyle.Secondary)
-      );
-      return [new ActionRowBuilder().addComponents(buttons.slice(0, 5))];
-    }
-
-    const p = turnPlayer;
-    const mon = this.activeMon(p);
-    const moves = movesFor(mon.fruit);
-    const atk = mon.fruit.atk + p.atkBonus;
-    const benchAlive = p.team.some((m, i) => i !== p.active && m.hp > 0);
-    const quick = moves.quick;
-    const sig = moves.signature;
-    const scale = (printed) => round5((printed / mon.fruit.atk) * atk);
-    const quickInfo = `${scale(quick.dmg)}${quick.flips === 2 ? '/heads' : quick.flips === 1 ? '?' : ''}`;
-    const sigInfo =
-      sig.dmg != null
-        ? `${scale(sig.dmg)}${['flurry', 'cascade'].includes(sig.kind) ? '/heads' : sig.kind === 'gamble' ? '?' : ''}`
-        : sig.heal != null
-          ? `heal ${sig.heal}`
-          : `+${sig.buff} ATK`;
     return [
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`battle:${battle.id}:act:quick`)
-          .setLabel(`${quick.name} ${quickInfo} ·${quick.cost}⚡`)
+          .setLabel(quickLabel)
           .setStyle(ButtonStyle.Danger)
           .setEmoji('⚔️')
-          .setDisabled(p.power < quick.cost),
+          .setDisabled(quickDisabled),
         new ButtonBuilder()
           .setCustomId(`battle:${battle.id}:act:sig`)
-          .setLabel(`${sig.name} ${sigInfo} ·${sig.cost}⚡`)
+          .setLabel(sigLabel)
           .setStyle(ButtonStyle.Success)
-          .setEmoji(sig.emoji)
-          .setDisabled(p.power < sig.cost),
+          .setEmoji('✨')
+          .setDisabled(sigDisabled),
         new ButtonBuilder()
           .setCustomId(`battle:${battle.id}:act:guard`)
-          .setLabel(`Guard +${round5(atk * config.BLOCK_SHIELD_RATIO)}🛡 ·1⚡`)
+          .setLabel('Guard')
           .setStyle(ButtonStyle.Primary)
           .setEmoji('🛡️')
-          .setDisabled(p.power < 1)
       ),
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`battle:${battle.id}:act:charge`)
-          .setLabel('Charge +1⚡')
+          .setLabel(`Charge +${config.CLASH.CHARGE_GAIN}⚡`)
           .setStyle(ButtonStyle.Secondary)
           .setEmoji('⚡'),
         new ButtonBuilder()
           .setCustomId(`battle:${battle.id}:act:retreat`)
-          .setLabel('Retreat ·1⚡')
+          .setLabel('Retreat')
           .setStyle(ButtonStyle.Secondary)
           .setEmoji('🔄')
-          .setDisabled(p.power < 1 || !benchAlive)
+          .setDisabled(retreatDisabled)
       ),
     ];
   }
@@ -525,9 +491,7 @@ class BattleManager {
       if (action === 'accept' || action === 'decline') await this.handleInvite(interaction, battle, action);
       else if (action === 'pick') await this.handlePick(interaction, battle, extra);
       else if (action === 'act') await this.handleAction(interaction, battle, extra);
-      else if (action === 'switchto') await this.handleSwitchTo(interaction, battle, parseInt(extra, 10));
-      else if (action === 'cancelswitch') await this.handleCancelSwitch(interaction, battle);
-      else if (action === 'replace') await this.handleReplace(interaction, battle, parseInt(extra, 10));
+      else if (action === 'rtgt') await this.handleRetreatTarget(interaction, battle, parseInt(extra, 10));
       else await interaction.deferUpdate().catch(() => {});
     } catch (err) {
       console.error('battle error:', err);
@@ -616,31 +580,32 @@ class BattleManager {
     }
 
     battle.phase = 'fight';
-    battle.turn = battle.order[crypto.randomInt(2)];
-    const first = battle.players[battle.turn];
-    first.power = Math.min(config.POWER_CAP, first.power + 1);
-    battle.log.push(`🎲 **${first.user.displayName}** won the coin flip and goes first! (+1⚡)`);
-    await this.renderAllViews(battle);
-    this.setTimer(battle, config.TURN_TIMEOUT_MS, () => this.handleTurnTimeout(battle));
+    battle.log.push('⚔️ **The clash begins!** Both players choose secretly each round — reveals happen together!');
+    await this.beginRound(battle);
   }
 
-  // Type-adjusted deterministic damage, Pokémon-TCG style: weakness ×1.5,
-  // resistance ×0.75, rounded to 5s. Pierce ignores both type and shields.
-  dealDamage(battle, attackerId, defenderId, base, { pierce = false } = {}) {
+  // ── Clash resolution ─────────────────────────────────────────────
+
+  // Type-adjusted damage: weakness ×1.5, resistance ×0.75 (doubled under True
+  // Aim), rounded to 5s. Pierce ignores type and shields. mult covers events,
+  // punishes, guard breaks, and Fired Up.
+  applyDamage(battle, attackerId, defenderId, base, { pierce = false, mult = 1 } = {}) {
     const d = battle.players[defenderId];
     const atkType = this.activeMon(battle.players[attackerId]).fruit.type;
     const defType = TYPES[this.activeMon(d).fruit.type];
-    let dmg = base;
+    let dmg = base * mult;
     let note = '';
     if (!pierce) {
+      const boost = battle.event?.typeBoost;
       if (defType.weakTo === atkType) {
-        dmg = round5(dmg * 1.5);
-        note = " — it's super effective! ⤴️";
+        dmg = dmg * (boost ? 2 : 1.5);
+        note = " — super effective! ⤴️";
       } else if (defType.resists === atkType) {
-        dmg = round5(dmg * 0.75);
+        dmg = dmg * (boost ? 0.5 : 0.75);
         note = ' — resisted ⤵️';
       }
     }
+    dmg = round5(dmg);
     let absorbed = 0;
     if (!pierce && d.shield > 0) {
       absorbed = Math.min(d.shield, dmg);
@@ -652,227 +617,296 @@ class BattleManager {
     return { dealt: dmg, absorbed, note, fainted: mon.hp === 0 };
   }
 
-  async handleAction(interaction, battle, verb) {
-    if (battle.phase !== 'fight' || battle.pendingReplace) return interaction.deferUpdate();
-    if (interaction.user.id !== battle.turn) {
-      return interaction.reply({ content: "It's not your turn!", ephemeral: true });
+  async beginRound(battle) {
+    battle.round += 1;
+    battle.choices = {};
+    battle.event = null;
+    if (battle.round > 1 && battle.round % config.CLASH.EVENT_EVERY === 0) {
+      battle.event = BattleManager.EVENTS[crypto.randomInt(BattleManager.EVENTS.length)];
+      battle.log.push(`🎪 ${battle.event.text}`);
     }
-    const p = battle.players[battle.turn];
-    const attackerId = battle.turn;
-    const defenderId = battle.order.find((uid) => uid !== battle.turn);
-    const mon = this.activeMon(p);
-    const atk = this.effectiveAtk(p);
-    const moves = movesFor(mon.fruit);
+    const energyMult = battle.event?.energyMult || 1;
+    for (const uid of battle.order) {
+      const p = battle.players[uid];
+      p.power = Math.min(config.POWER_CAP, p.power + 1 * energyMult);
+    }
+    await this.renderAllViews(battle);
+    this.setTimer(battle, config.ROUND_TIMEOUT_MS, () => this.handleRoundTimeout(battle));
+  }
 
-    if (verb === 'quick') {
-      const quick = moves.quick;
-      if (p.power < quick.cost) return interaction.deferUpdate();
-      p.power -= quick.cost;
-      const base = round5((quick.dmg / mon.fruit.atk) * atk);
-      const name = `**${quick.name}**`;
-      if (quick.flips === 1) {
-        // Lucky Strike: heads lands big, tails whiffs entirely.
-        const heads = crypto.randomInt(2) === 0;
-        if (heads) {
-          const res = this.dealDamage(battle, attackerId, defenderId, base);
-          battle.log.push(`🪙 **${mon.fruit.name}** uses ${name} — *Heads!* **${res.dealt}** damage${res.note}!`);
-        } else {
-          battle.log.push(`🪙 **${mon.fruit.name}** uses ${name} — *Tails...* a total whiff!`);
-        }
-      } else if (quick.flips === 2) {
-        const flips = [crypto.randomInt(2) === 0, crypto.randomInt(2) === 0];
-        const heads = flips.filter(Boolean).length;
-        let total = 0;
-        for (let i = 0; i < heads; i++) {
-          const res = this.dealDamage(battle, attackerId, defenderId, base);
-          total += res.dealt;
-          if (res.fainted) break;
-        }
-        const flipText = flips.map((f) => (f ? 'Heads' : 'Tails')).join(', ');
-        battle.log.push(
-          `🪙 **${mon.fruit.name}** uses ${name} — flips: *${flipText}* — ` +
-            (heads > 0 ? `**${total}** damage!` : 'nothing lands!')
-        );
-      } else {
-        const res = this.dealDamage(battle, attackerId, defenderId, base, { pierce: quick.pierce });
-        let extra = '';
-        if (quick.drain) {
-          const heal = Math.round(res.dealt / 2);
-          mon.hp = Math.min(mon.maxHp, mon.hp + heal);
-          extra = `, drinks back **${heal}** HP`;
-        }
-        if (quick.shieldMult > 0) {
-          const gained = round5(atk * quick.shieldMult);
-          p.shield += gained;
-          extra = `, +**${gained}** shield`;
-        }
-        battle.log.push(
-          `⚔️ **${mon.fruit.name}** uses ${name} — **${res.dealt}**${quick.pierce ? ' piercing' : ''} damage${res.note}${extra}` +
-            (res.absorbed > 0 ? ` (🛡️ ${res.absorbed} blocked)` : '') + '!'
-        );
+  // A player pressing an action button during the choosing phase.
+  async handleAction(interaction, battle, verb) {
+    if (battle.phase !== 'fight') return interaction.deferUpdate();
+    const uid = interaction.user.id;
+    const p = battle.players[uid];
+    if (!p) return interaction.reply({ content: "You're not in this battle!", ephemeral: true });
+    if (battle.choices[uid]) {
+      return interaction.reply({ content: "You've already locked in this round!", ephemeral: true });
+    }
+
+    const mon = this.activeMon(p);
+    const moves = movesFor(mon.fruit);
+    if (verb === 'quick' && p.power < moves.quick.cost) {
+      return interaction.reply({ content: `❌ ${moves.quick.name} needs ${moves.quick.cost}⚡ — you have ${p.power}. Try Charge or Guard!`, ephemeral: true });
+    }
+    if (verb === 'sig' && p.power < moves.signature.cost) {
+      return interaction.reply({ content: `❌ ${moves.signature.name} needs ${moves.signature.cost}⚡ — you have ${p.power}. Charge up first!`, ephemeral: true });
+    }
+    if (verb === 'retreat') {
+      const bench = p.team
+        .map((m, i) => ({ m, i }))
+        .filter(({ m, i }) => i !== p.active && m.hp > 0);
+      if (bench.length === 0) {
+        return interaction.reply({ content: '❌ Nobody left on the bench!', ephemeral: true });
       }
-    } else if (verb === 'guard') {
-      if (p.power < 1) return interaction.deferUpdate();
-      p.power -= 1;
-      const gained = round5(atk * config.BLOCK_SHIELD_RATIO);
-      p.shield += gained;
-      battle.log.push(`🛡️ **${mon.fruit.name}** guards — +${gained} shield (${p.shield} total)!`);
-    } else if (verb === 'charge') {
-      p.power = Math.min(config.POWER_CAP, p.power + 1);
-      battle.log.push(`⚡ **${mon.fruit.name}** charges energy! (${p.power}⚡ banked)`);
-    } else if (verb === 'retreat') {
-      if (p.power < 1) return interaction.deferUpdate();
-      battle.switching = battle.turn;
-      await interaction.deferUpdate();
-      return this.renderAllViews(battle); // show bench choices, turn continues
-    } else if (verb === 'sig') {
-      if (p.power < moves.signature.cost) return interaction.deferUpdate();
+      // Pick the incoming fruit privately so the retreat stays secret.
+      const row = new ActionRowBuilder().addComponents(
+        bench.slice(0, 5).map(({ m, i }) =>
+          new ButtonBuilder()
+            .setCustomId(`battle:${battle.id}:rtgt:${i}`)
+            .setLabel(`${m.fruit.name} (${m.hp} HP)`)
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji(remoji(m.fruit.rarity))
+        )
+      );
+      return interaction.reply({ content: '🔄 Who comes in? (Your opponent can\'t see this!)', components: [row], ephemeral: true });
+    }
+    if (!['quick', 'sig', 'guard', 'charge'].includes(verb)) return interaction.deferUpdate();
+
+    battle.choices[uid] = { verb };
+    await interaction.deferUpdate();
+    await this.afterChoice(battle);
+  }
+
+  async handleRetreatTarget(interaction, battle, idx) {
+    const uid = interaction.user.id;
+    const p = battle.players[uid];
+    if (!p || battle.phase !== 'fight' || battle.choices[uid]) return interaction.deferUpdate().catch(() => {});
+    const target = p.team[idx];
+    if (!target || target.hp <= 0 || idx === p.active) return interaction.deferUpdate().catch(() => {});
+    battle.choices[uid] = { verb: 'retreat', target: idx };
+    await interaction.update({ content: `🔄 Locked in — retreating to **${target.fruit.name}**!`, components: [] }).catch(() => {});
+    await this.afterChoice(battle);
+  }
+
+  async afterChoice(battle) {
+    const bothIn = battle.order.every((uid) => battle.choices[uid]);
+    if (bothIn) {
+      await this.resolveRound(battle);
+    } else {
+      await this.renderAllViews(battle); // show the ✅ locked-in status
+    }
+  }
+
+  // Compute one side's outgoing attack packet (before it is applied).
+  buildPacket(battle, uid, oppUid) {
+    const p = battle.players[uid];
+    const choice = battle.choices[uid];
+    const opp = battle.choices[oppUid];
+    const mon = this.activeMon(p);
+    const moves = movesFor(mon.fruit);
+    const atk = mon.fruit.atk + p.atkBonus;
+    const scale = (printed, base) => round5((printed / base) * atk);
+    const packet = { hits: [], lines: [], heal: 0, selfDamage: 0, energy: 0, verb: choice.verb };
+    const eventDmg = battle.event?.dmgMult || 1;
+    let mult = eventDmg;
+    if (p.fired) mult *= config.CLASH.FIRED_MULT;
+
+    const flipGate = () => !battle.event?.flipToHit || crypto.randomInt(2) === 0;
+
+    if (choice.verb === 'quick') {
+      p.power -= moves.quick.cost;
+      const q = moves.quick;
+      const base = scale(q.dmg, mon.fruit.atk);
+      const name = `**${q.name}**`;
+      let vsMult = 1;
+      if (opp.verb === 'charge') vsMult = config.CLASH.PUNISH_MULT;
+      if (opp.verb === 'retreat') {
+        packet.lines.push(`⚔️ ${mon.fruit.name}'s ${name} slices thin air — the retreat dodged it!`);
+        return packet;
+      }
+      if (opp.verb === 'guard') vsMult *= 1 - config.CLASH.GUARD_BLOCK;
+      const rolls = q.flips === 2 ? 2 : 1;
+      for (let i = 0; i < rolls; i++) {
+        const landed = q.flips >= 1 ? crypto.randomInt(2) === 0 : true;
+        if (landed && flipGate()) {
+          packet.hits.push({ base, mult: mult * vsMult, pierce: q.pierce, drain: q.drain, shieldMult: q.shieldMult });
+        }
+      }
+      if (packet.hits.length === 0 && q.flips >= 1) packet.lines.push(`🪙 ${mon.fruit.name}'s ${name} — all tails, a whiff!`);
+      else if (opp.verb === 'charge') packet.lines.push(`⚔️ ${mon.fruit.name} catches the charge with ${name} — PUNISH ×${config.CLASH.PUNISH_MULT}!`);
+      else if (opp.verb === 'guard') packet.lines.push(`🛡️ ${mon.fruit.name}'s ${name} thuds into the guard...`);
+    } else if (choice.verb === 'sig') {
       p.power -= moves.signature.cost;
       const kind = mon.fruit.ability;
       const name = `**${moves.signature.name}**`;
-      if (kind === 'smash') {
-        const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 1.8));
-        battle.log.push(`💥 **${mon.fruit.name}** uses ${name} — **${res.dealt}** damage${res.note}!`);
-      } else if (kind === 'regrow') {
-        const heal = round5(mon.maxHp * 0.5);
-        mon.hp = Math.min(mon.maxHp, mon.hp + heal);
-        battle.log.push(`💚 **${mon.fruit.name}** uses ${name} — restores **${heal}** HP!`);
-      } else if (kind === 'pierce') {
-        const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 1.2), { pierce: true });
-        battle.log.push(`🗡️ **${mon.fruit.name}** uses ${name} — **${res.dealt}** piercing damage, straight through!`);
-      } else if (kind === 'drain') {
-        const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 0.9));
-        const heal = Math.round(res.dealt / 2);
-        mon.hp = Math.min(mon.maxHp, mon.hp + heal);
-        battle.log.push(`🧛 **${mon.fruit.name}** uses ${name} — **${res.dealt}** damage${res.note}, drinks back **${heal}** HP!`);
+      let vsMult = 1;
+      let vsNote = '';
+      if (opp.verb === 'guard' && kind !== 'regrow' && kind !== 'ripen') {
+        vsMult = config.CLASH.GUARDBREAK_MULT;
+        vsNote = ' — GUARD BREAK!';
+      }
+      const dmgKinds = { smash: 1.8, pierce: 1.2, drain: 0.9, flurry: 0.9, gamble: 2.6, cascade: 0.8 };
+      if (kind === 'regrow') {
+        packet.heal += round5(mon.maxHp * 0.5) * (battle.event?.healMult || 1);
+        packet.lines.push(`💚 ${mon.fruit.name} uses ${name} — regrowing!`);
+      } else if (kind === 'ripen') {
+        p.atkBonus += 10;
+        packet.lines.push(`📈 ${mon.fruit.name} uses ${name} — the team gains +10 ATK (now +${p.atkBonus})!`);
       } else if (kind === 'flurry') {
         const flips = [crypto.randomInt(2) === 0, crypto.randomInt(2) === 0];
         const heads = flips.filter(Boolean).length;
-        let total = 0;
-        for (let i = 0; i < heads; i++) {
-          const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 0.9));
-          total += res.dealt;
-          if (res.fainted) break;
-        }
-        const flipText = flips.map((f) => (f ? 'Heads' : 'Tails')).join(', ');
-        battle.log.push(
-          `🪙 **${mon.fruit.name}** uses ${name} — flips: *${flipText}* — ` +
-            (heads > 0 ? `**${total}** damage over ${heads} hit${heads > 1 ? 's' : ''}!` : 'a total whiff!')
-        );
-      } else if (kind === 'ripen') {
-        p.atkBonus += 10;
-        battle.log.push(`📈 **${mon.fruit.name}** uses ${name} — the team gains **+10 ATK** (now +${p.atkBonus})!`);
-      } else if (kind === 'gamble') {
-        const heads = crypto.randomInt(2) === 0;
-        if (heads) {
-          const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 2.6));
-          battle.log.push(`🎲 **${mon.fruit.name}** uses ${name} — *Heads!* A colossal **${res.dealt}** damage${res.note}!`);
-        } else {
-          const recoil = round5(atk * 0.5);
-          mon.hp = Math.max(0, mon.hp - recoil);
-          battle.log.push(`🎲 **${mon.fruit.name}** uses ${name} — *Tails...* it hurts itself for **${recoil}**!`);
-          if (mon.hp === 0) {
-            const alive = p.team.filter((m) => m.hp > 0);
-            battle.log.push(`💀 **${mon.fruit.name}** knocked itself out!`);
-            if (alive.length === 0) {
-              const winner = battle.players[defenderId];
-              await interaction.deferUpdate();
-              return this.finish(battle, winner, p, `🏁 **${p.user.displayName}** gambled it all away!`);
-            }
-            battle.pendingReplace = attackerId;
-          }
-        }
+        for (let i = 0; i < heads; i++) if (flipGate()) packet.hits.push({ base: scale(round5(mon.fruit.atk * 0.9), mon.fruit.atk), mult: mult * vsMult, pierce: false });
+        packet.lines.push(`🪙 ${mon.fruit.name} uses ${name} — flips *${flips.map((f) => (f ? 'Heads' : 'Tails')).join(', ')}*${vsNote}`);
       } else if (kind === 'cascade') {
-        const flips = [];
-        while (flips.length < 8 && crypto.randomInt(2) === 0) flips.push('Heads');
-        flips.push('Tails');
-        const heads = flips.length - 1;
-        let total = 0;
-        for (let i = 0; i < heads; i++) {
-          const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 0.8));
-          total += res.dealt;
-          if (res.fainted) break;
+        const chain = [];
+        while (chain.length < 8 && crypto.randomInt(2) === 0) chain.push('Heads');
+        chain.push('Tails');
+        for (let i = 0; i < chain.length - 1; i++) if (flipGate()) packet.hits.push({ base: scale(round5(mon.fruit.atk * 0.8), mon.fruit.atk), mult: mult * vsMult, pierce: false });
+        packet.lines.push(`♾️ ${mon.fruit.name} uses ${name} — flips *${chain.join(', ')}*${vsNote}`);
+      } else if (kind === 'gamble') {
+        if (crypto.randomInt(2) === 0) {
+          if (flipGate()) packet.hits.push({ base: scale(round5(mon.fruit.atk * 2.6), mon.fruit.atk), mult: mult * vsMult, pierce: false });
+          packet.lines.push(`🎲 ${mon.fruit.name} uses ${name} — *Heads!* A colossal blow${vsNote}!`);
+        } else {
+          packet.selfDamage = round5(atk * 0.5);
+          packet.lines.push(`🎲 ${mon.fruit.name} uses ${name} — *Tails...* it hurts itself!`);
         }
-        battle.log.push(
-          `♾️ **${mon.fruit.name}** uses ${name} — flips: *${flips.join(', ')}* — ` +
-            (heads > 0 ? `**${total}** damage over ${heads} hit${heads > 1 ? 's' : ''}!` : 'it fizzles!')
-        );
-      }
-    } else {
-      return interaction.deferUpdate();
-    }
-
-    await interaction.deferUpdate();
-    await this.endTurn(battle, defenderId);
-  }
-
-  async handleSwitchTo(interaction, battle, idx) {
-    if (battle.phase !== 'fight' || battle.switching !== interaction.user.id) return interaction.deferUpdate();
-    const p = battle.players[interaction.user.id];
-    const target = p.team[idx];
-    if (!target || target.hp <= 0 || idx === p.active || p.power < 1) return interaction.deferUpdate();
-    p.power -= 1;
-    p.shield = 0; // shields belong to the fielded fruit's stance
-    battle.switching = null;
-    p.active = idx;
-    battle.log.push(`🔄 **${p.user.displayName}** sends in **${target.fruit.name}**!`);
-    await interaction.deferUpdate();
-    const defenderId = battle.order.find((uid) => uid !== battle.turn);
-    await this.endTurn(battle, defenderId);
-  }
-
-  async handleCancelSwitch(interaction, battle) {
-    if (battle.switching !== interaction.user.id) return interaction.deferUpdate();
-    battle.switching = null;
-    await interaction.deferUpdate();
-    await this.renderAllViews(battle);
-  }
-
-  async handleReplace(interaction, battle, idx) {
-    if (battle.phase !== 'fight' || battle.pendingReplace !== interaction.user.id) return interaction.deferUpdate();
-    const p = battle.players[interaction.user.id];
-    const target = p.team[idx];
-    if (!target || target.hp <= 0 || idx === p.active) return interaction.deferUpdate();
-    p.active = idx;
-    p.shield = 0;
-    battle.pendingReplace = null;
-    battle.log.push(`🃏 **${p.user.displayName}** sends in **${target.fruit.name}**!`);
-    await interaction.deferUpdate();
-    await this.renderAllViews(battle);
-    this.setTimer(battle, config.TURN_TIMEOUT_MS, () => this.handleTurnTimeout(battle));
-  }
-
-  // Pass the turn to nextId (the defender of the action just taken).
-  async endTurn(battle, nextId) {
-    const next = battle.players[nextId];
-    const prev = battle.players[battle.turn];
-    battle.turnCount++;
-
-    // Did the action just faint the defender's active fruit?
-    if (this.activeMon(next).hp <= 0) {
-      const alive = next.team.filter((m) => m.hp > 0);
-      battle.log.push(`💀 **${this.activeMon(next).fruit.name}** is squashed!`);
-      if (alive.length === 0) {
-        return this.finish(battle, prev, next, `🏁 **${next.user.displayName}** is out of fruits!`);
-      }
-      battle.turn = nextId;
-      next.power = Math.min(config.POWER_CAP, next.power + 1);
-      if (alive.length === 1) {
-        next.active = next.team.findIndex((m) => m.hp > 0);
-        next.shield = 0;
-        battle.log.push(`🃏 **${next.user.displayName}** sends in **${this.activeMon(next).fruit.name}**!`);
       } else {
-        battle.pendingReplace = nextId;
+        if (flipGate()) packet.hits.push({ base: scale(round5(mon.fruit.atk * dmgKinds[kind]), mon.fruit.atk), mult: mult * vsMult, pierce: kind === 'pierce', drain: kind === 'drain' });
+        else packet.lines.push(`🌪 ${mon.fruit.name}'s ${name} is blown off course!`);
+        if (packet.hits.length > 0) packet.lines.push(`${ABILITIES[kind].emoji} ${mon.fruit.name} unleashes ${name}${vsNote}!`);
       }
-      await this.renderAllViews(battle);
-      this.setTimer(battle, config.TURN_TIMEOUT_MS, () => this.handleTurnTimeout(battle));
-      return;
+    } else if (choice.verb === 'guard') {
+      if (opp.verb === 'quick') {
+        // Counter with a clean 30% of your light move.
+        const counter = round5(scale(moves.quick.dmg, mon.fruit.atk) * config.CLASH.GUARD_COUNTER);
+        packet.hits.push({ base: counter, mult: eventDmg, pierce: false, counter: true });
+        packet.lines.push(`🛡️ ${mon.fruit.name} guards and counters!`);
+      } else {
+        packet.energy += config.CLASH.STARE_GAIN;
+        packet.lines.push(`🛡️ ${mon.fruit.name} guards... nothing to block (+${config.CLASH.STARE_GAIN}⚡).`);
+      }
+    } else if (choice.verb === 'charge') {
+      packet.energy += config.CLASH.CHARGE_GAIN * (battle.event?.energyMult || 1);
+      packet.lines.push(`⚡ ${mon.fruit.name} charges up (+${config.CLASH.CHARGE_GAIN * (battle.event?.energyMult || 1)}⚡)!`);
+    } else if (choice.verb === 'retreat') {
+      packet.lines.push(`🔄 ${p.user.displayName} swaps to **${p.team[choice.target].fruit.name}**!`);
+    }
+    return packet;
+  }
+
+  async resolveRound(battle) {
+    if (battle.timer) clearTimeout(battle.timer);
+    const [ua, ub] = battle.order;
+    const A = battle.players[ua];
+    const B = battle.players[ub];
+    const verbIcon = { quick: '⚔️ Strike', sig: '✨ Special', guard: '🛡️ Guard', charge: '⚡ Charge', retreat: '🔄 Retreat' };
+    battle.log.push(
+      `— **Round ${battle.round}** — ${A.user.displayName} ${verbIcon[battle.choices[ua].verb]} vs ${B.user.displayName} ${verbIcon[battle.choices[ub].verb]}`
+    );
+
+    // Retreats swap first (the incoming fruit faces whatever is coming).
+    for (const uid of battle.order) {
+      const c = battle.choices[uid];
+      if (c.verb === 'retreat') {
+        const p = battle.players[uid];
+        p.active = c.target;
+        p.shield = 0;
+      }
     }
 
-    battle.turn = nextId;
-    next.power = Math.min(config.POWER_CAP, next.power + 1);
-    await this.renderAllViews(battle);
-    this.setTimer(battle, config.TURN_TIMEOUT_MS, () => this.handleTurnTimeout(battle));
+    // Build both packets from the same pre-damage snapshot, then apply.
+    const packetA = this.buildPacket(battle, ua, ub);
+    const packetB = this.buildPacket(battle, ub, ua);
+
+    const dealt = { [ua]: 0, [ub]: 0 };
+    for (const [uid, oppUid, packet] of [[ua, ub, packetA], [ub, ua, packetB]]) {
+      const p = battle.players[uid];
+      const mon = this.activeMon(p);
+      for (const hit of packet.hits) {
+        const res = this.applyDamage(battle, uid, oppUid, hit.base, { pierce: hit.pierce, mult: hit.mult });
+        dealt[uid] += res.dealt;
+        if (res.note) packet.lines.push(`💢 ${res.dealt} damage${res.note}`);
+        else packet.lines.push(`💢 ${res.dealt} damage${res.absorbed > 0 ? ` (🛡️ ${res.absorbed} blocked)` : ''}`);
+        if (hit.drain) packet.heal += Math.round(res.dealt / 2);
+        if (hit.shieldMult) p.shield += round5((mon.fruit.atk + p.atkBonus) * hit.shieldMult);
+      }
+      if (packet.selfDamage > 0) mon.hp = Math.max(0, mon.hp - packet.selfDamage);
+      if (packet.energy > 0) p.power = Math.min(config.POWER_CAP, p.power + packet.energy);
+      if (p.fired && dealt[uid] > 0) {
+        p.fired = false;
+        packet.lines.push(`🔥 ${p.user.displayName}'s FIRED UP bonus lands!`);
+      }
+    }
+    // Heals apply after damage (drain, regrow, event mends).
+    for (const [uid, packet] of [[ua, packetA], [ub, packetB]]) {
+      const mon = this.activeMon(battle.players[uid]);
+      if (packet.heal > 0 && mon.hp > 0) {
+        const healed = Math.min(mon.maxHp - mon.hp, round5(packet.heal));
+        mon.hp += healed;
+        if (healed > 0) packet.lines.push(`💚 ${mon.fruit.name} recovers ${healed} HP`);
+      }
+    }
+    if (battle.event?.endHeal) {
+      for (const uid of battle.order) {
+        const mon = this.activeMon(battle.players[uid]);
+        if (mon.hp > 0) mon.hp = Math.min(mon.maxHp, mon.hp + battle.event.endHeal);
+      }
+      battle.log.push(`🌱 The Super Bloom mends both fighters for ${battle.event.endHeal}.`);
+    }
+
+    battle.log.push(...packetA.lines, ...packetB.lines);
+
+    // Golden Hour bounty for the round's net winner.
+    if (battle.event?.bounty && dealt[ua] !== dealt[ub]) {
+      const winnerUid = dealt[ua] > dealt[ub] ? ua : ub;
+      await this.db.addBalance(winnerUid, battle.event.bounty).catch(() => {});
+      battle.log.push(`🍯 **${battle.players[winnerUid].user.displayName}** pockets the ${battle.event.bounty}-coin bounty!`);
+    }
+
+    // Momentum: net round winners build toward FIRED UP.
+    for (const [uid, oppUid] of [[ua, ub], [ub, ua]]) {
+      const p = battle.players[uid];
+      if (dealt[uid] > dealt[oppUid]) {
+        p.momentum = Math.min(config.CLASH.MOMENTUM_MAX, p.momentum + 1);
+        if (p.momentum >= config.CLASH.MOMENTUM_MAX && !p.fired) {
+          p.fired = true;
+          p.momentum = 0;
+          battle.log.push(`🔥 **${p.user.displayName} is FIRED UP** — their next hit strikes ×${config.CLASH.FIRED_MULT}!`);
+        }
+      } else if (dealt[uid] < dealt[oppUid]) {
+        p.momentum = Math.max(0, p.momentum - 1);
+      }
+    }
+
+    // Faints auto-promote the next fruit in draft order.
+    for (const uid of battle.order) {
+      const p = battle.players[uid];
+      if (this.activeMon(p).hp <= 0) {
+        battle.log.push(`💀 **${this.activeMon(p).fruit.name}** is squashed!`);
+        const next = p.team.findIndex((m) => m.hp > 0);
+        if (next !== -1) {
+          p.active = next;
+          p.shield = 0;
+          battle.log.push(`🃏 **${p.user.displayName}** sends in **${this.activeMon(p).fruit.name}**!`);
+        }
+      }
+    }
+
+    // Win check (simultaneous KOs possible).
+    const aliveA = A.team.some((m) => m.hp > 0);
+    const aliveB = B.team.some((m) => m.hp > 0);
+    if (!aliveA && !aliveB) {
+      // Total mutual destruction — higher total damage dealt takes it.
+      const winner = dealt[ua] >= dealt[ub] ? A : B;
+      const loser = winner === A ? B : A;
+      return this.finish(battle, winner, loser, '💥 **DOUBLE KO!** The bigger hitter takes the crown!');
+    }
+    if (!aliveA) return this.finish(battle, B, A, `🏁 **${A.user.displayName}** is out of fruits!`);
+    if (!aliveB) return this.finish(battle, A, B, `🏁 **${B.user.displayName}** is out of fruits!`);
+
+    await this.beginRound(battle);
   }
 
   // ── Timeouts & endings ───────────────────────────────────────────
@@ -888,12 +922,18 @@ class BattleManager {
     }
   }
 
-  async handleTurnTimeout(battle) {
+  // Slowpokes auto-Guard so the round always resolves.
+  async handleRoundTimeout(battle) {
     if (battle.phase !== 'fight') return;
-    const loserId = battle.pendingReplace || battle.turn;
-    const loser = battle.players[loserId];
-    const winner = Object.values(battle.players).find((p) => p.user.id !== loserId);
-    await this.finish(battle, winner, loser, `⏰ **${loser.user.displayName}** took too long — forfeit!`);
+    let filled = false;
+    for (const uid of battle.order) {
+      if (!battle.choices[uid]) {
+        battle.choices[uid] = { verb: 'guard' };
+        battle.log.push(`⏰ **${battle.players[uid].user.displayName}** dawdled — auto-Guard!`);
+        filled = true;
+      }
+    }
+    if (filled) await this.resolveRound(battle);
   }
 
   resultEmbed(battle, winner, loser) {

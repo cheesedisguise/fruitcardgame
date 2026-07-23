@@ -81,14 +81,25 @@ module.exports = {
   UNDERDOG_STEP: 0.15,
   UNDERDOG_MAX: 3,
   POWER_CAP: 10,
-  DAMAGE_VARIANCE: 0.15, // damage rolls between 85% and 115% of ATK
-  CRIT_CHANCE: 0.1,
-  CRIT_MULTIPLIER: 1.5,
-  BLOCK_SHIELD_RATIO: 0.75, // shield gained = ratio * ATK
+  BLOCK_SHIELD_RATIO: 0.75, // shield from Guard Strike-style moves
   ABILITY_COST: 3,
+
+  // Clash system: both players secretly pick each round, then reveal.
+  CLASH: {
+    GUARD_BLOCK: 0.7, // guards absorb this fraction of an incoming strike
+    GUARD_COUNTER: 0.3, // counter damage = fraction of the guarder's light move
+    PUNISH_MULT: 1.5, // strikes hit chargers this much harder
+    GUARDBREAK_MULT: 1.25, // specials smash through guards with a bonus
+    CHARGE_GAIN: 2, // Charge banks this much extra energy
+    STARE_GAIN: 1, // a guard that blocks nothing still banks this
+    MOMENTUM_MAX: 3, // win this many net rounds to get Fired Up
+    FIRED_MULT: 1.5, // Fired Up multiplies your next damaging round
+    EVENT_EVERY: 3, // an arena event rolls every this many rounds
+  },
 
   // Component timeouts (ms)
   INVITE_TIMEOUT_MS: 2 * 60 * 1000,
   PICK_TIMEOUT_MS: 3 * 60 * 1000,
+  ROUND_TIMEOUT_MS: 75 * 1000, // auto-Guard for slowpokes
   TURN_TIMEOUT_MS: 2 * 60 * 1000,
 };

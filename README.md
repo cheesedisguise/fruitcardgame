@@ -49,33 +49,37 @@ Everything also works as plain text commands:
 | `ftutorial` | Interactive tutorial (types, packs, trading) |
 | `fhelp` | All commands (tells new players to fstart) |
 
-## Battle system
+## Battle system — the Clash
 
 **Fair drafting:** pick up to 3 fruits within a **9-point budget** (Common 1pt,
 Uncommon 2, Rare 3, Epic 4, Legendary 5, Mythic 6) — big cards mean small
-teams. If your squad is still statistically weaker, you start with an
-**underdog boost** of up to +3⚡.
+teams. Statistically weaker squads start with an **underdog boost** (up to +3⚡).
 
-You gain **1⚡ energy each turn** (cap 10) and spend it on your fruit's two
-printed moves, or the universal actions:
+**Simultaneous rounds:** every round, BOTH players secretly lock one action;
+the round reveals and resolves at once — real fighting-game mind games:
 
-**Light moves** (7 archetypes, printed per card): plain type jab (1⚡, 0.7×) ·
-Power Strike (2⚡, 0.95×) · Lucky Strike (1⚡ — flip: 1.3× or whiff) · Twin Tap
-(1⚡ — flip 2, 0.5× per heads) · Guard Strike (2⚡, hit + shield) · Leech Bite
-(2⚡, hit + heal half) · Piercing Lance (2⚡, ignores shields & types)
+| Action | Cost | Beats | Beaten by |
+|---|---|---|---|
+| ⚔️ Strike (your light move) | 1-2⚡ | ⚡ Charge (punish ×1.5) | 🛡️ Guard, 🔄 Retreat |
+| ✨ Special (your signature) | 2-4⚡ | 🛡️ Guard (break, +25%) | — |
+| 🛡️ Guard (block 70% + counter) | free | ⚔️ Strike | ✨ Special |
+| ⚡ Charge (+2⚡) | free | — | ⚔️ Strike |
+| 🔄 Retreat (swap, dodge strikes) | free | ⚔️ Strike | ✨ Special |
 
-**Signature moves** (8 archetypes, uniquely named per fruit): Regrow heal 50%
-(2⚡) · Ripen +10 team ATK (2⚡) · Flurry flip 2, 0.9× per heads (2⚡) · Smash
-1.8× (3⚡) · Pierce 1.2× ignoring everything (3⚡) · Drain 0.9× + lifesteal
-(3⚡) · **Gamble** — flip: heads 2.6×, tails you take recoil (4⚡) · **Cascade**
-— flip until tails, 0.8× per heads (4⚡)
+Moves keep their printed mechanics — coin-flip lights (Lucky Strike, Twin
+Tap), lifesteal, shields, and signature gambles (Gamble: heads 2.6× / tails
+recoil; Cascade: flip until tails). You gain 1⚡ per round (cap 10).
 
-**Universal:** 🛡️ Guard (1⚡, shield = 75% ATK) · 🔄 Retreat (1⚡) · ⚡ Charge (bank +1)
+**Momentum:** out-damage your opponent in a round to build 🔥 momentum — three
+and you're **FIRED UP** (next hit ×1.5). **Arena events** roll every 3rd round:
+juice storms (+30% damage), wild gales (flip to hit), super blooms (double
+healing), power surges, true aim (double type effects), and golden-hour coin
+bounties.
 
-Non-flip damage is deterministic like the real TCG and type-adjusted: each
-type is **super effective (×1.5)** against the next in the cycle Citrus → Vine
-→ Stone → Berry → Tropical → Orchard → Citrus, and resists (×0.75) the type it
-beats. Knock out the whole enemy team to win.
+Non-flip damage is deterministic and type-adjusted: super effective ×1.5 /
+resisted ×0.75 around the cycle Citrus → Vine → Stone → Berry → Tropical →
+Orchard → Citrus. Knock out the whole enemy team to win — simultaneous double
+KOs go to the bigger hitter.
 
 ## Setup
 
