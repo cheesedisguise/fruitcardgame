@@ -22,7 +22,7 @@ const {
 } = require('discord.js');
 const config = require('./config');
 const { getFruit, RARITIES, TYPES, ABILITIES, movesFor } = require('./fruits');
-const { remoji } = require('./util');
+const { remoji, gemoji } = require('./util');
 
 const RARITY_ORDER = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
 const THREAD_DELETE_DELAY_MS = 20 * 1000;
@@ -252,7 +252,7 @@ class BattleManager {
         .map((o) => {
           const type = TYPES[o.fruit.type];
           return {
-            label: `${o.fruit.name} — ATK ${o.fruit.atk} · HP ${o.fruit.hp}`,
+            label: `${o.fruit.name} (${config.RARITY_COST[o.fruit.rarity]}pt) — ATK ${o.fruit.atk} · HP ${o.fruit.hp}`,
             description: `${RARITIES[o.fruit.rarity].name} · ${type.emoji} ${type.name} · ${movesFor(o.fruit).signature.name}`,
             value: o.fruit.id,
             emoji: remoji(o.fruit.rarity),
@@ -282,8 +282,12 @@ class BattleManager {
       .setTitle('🃏 Draft Your Team!')
       .setDescription(
         lines.join('\n') +
-          `\n\nPick **up to ${config.TEAM_SIZE} fruits**. The first is your opener; the rest wait on the bench.\n` +
-          `⚡ You gain 1 power per turn: Attack/Block/Switch cost 1, Abilities cost ${config.ABILITY_COST}, Charge banks +1.`
+          `\n\nPick **up to ${config.TEAM_SIZE} fruits** within the **${config.TEAM_POINTS}-point budget** ` +
+          `(cost by rarity: ${Object.entries(config.RARITY_COST)
+            .map(([r, c]) => `${RARITIES[r].name} ${c}`)
+            .join(' · ')}).\n` +
+          `The first pick is your opener; the rest wait on the bench.\n` +
+          `⚡ 1 energy per turn — quick attacks/Guard/Retreat cost 1, signature moves 2-4, Charge banks +1. Weaker teams start with bonus energy!`
       )
       .setFooter({ text: 'Draft from the menu below · 3 minutes' });
   }
@@ -294,14 +298,13 @@ class BattleManager {
       const p = battle.players[uid];
       if (p.team.length > 0) continue;
       const options = battle.pickOptions[uid];
-      const n = Math.min(config.TEAM_SIZE, options.length);
       rows.push(
         new ActionRowBuilder().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId(`battle:${battle.id}:pick:${uid}`)
-            .setPlaceholder(`${p.user.displayName} — draft your team (${n})!`)
-            .setMinValues(n)
-            .setMaxValues(n)
+            .setPlaceholder(`${p.user.displayName} — draft up to ${config.TEAM_SIZE} (${config.TEAM_POINTS}pt budget)!`)
+            .setMinValues(1)
+            .setMaxValues(Math.min(config.TEAM_SIZE, options.length))
             .addOptions(options)
         )
       );
@@ -327,9 +330,9 @@ class BattleManager {
     const lines = [
       `${remoji(mon.fruit.rarity)} **${p.user.displayName}** — *${mon.fruit.name}* ${type.emoji}${turnMark}`,
       `${hpBar(mon.hp, mon.maxHp)} **${mon.hp}**/${mon.maxHp}` +
-        `  ⚡${p.power}` +
-        (p.shield > 0 ? `  🛡️${p.shield}` : '') +
-        (p.atkBonus > 0 ? `  📈+${p.atkBonus}` : ''),
+        `  ${gemoji('energy', '⚡')}${p.power}` +
+        (p.shield > 0 ? `  ${gemoji('shield', '🛡️')}${p.shield}` : '') +
+        (p.atkBonus > 0 ? `  ${gemoji('ripen', '📈')}+${p.atkBonus}` : ''),
     ];
     const bench = p.team
       .map((m, i) => ({ m, i }))
@@ -426,10 +429,13 @@ class BattleManager {
     const moves = movesFor(mon.fruit);
     const atk = mon.fruit.atk + p.atkBonus;
     const benchAlive = p.team.some((m, i) => i !== p.active && m.hp > 0);
+    const quick = moves.quick;
     const sig = moves.signature;
+    const scale = (printed) => round5((printed / mon.fruit.atk) * atk);
+    const quickInfo = `${scale(quick.dmg)}${quick.flips === 2 ? '/heads' : quick.flips === 1 ? '?' : ''}`;
     const sigInfo =
       sig.dmg != null
-        ? `${round5((sig.dmg / mon.fruit.atk) * atk)}${sig.kind === 'flurry' ? '/heads' : ''}`
+        ? `${scale(sig.dmg)}${['flurry', 'cascade'].includes(sig.kind) ? '/heads' : sig.kind === 'gamble' ? '?' : ''}`
         : sig.heal != null
           ? `heal ${sig.heal}`
           : `+${sig.buff} ATK`;
@@ -437,16 +443,16 @@ class BattleManager {
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`battle:${battle.id}:act:quick`)
-          .setLabel(`${moves.quick.name} ${round5(0.7 * atk)} ·1⚡`)
+          .setLabel(`${quick.name} ${quickInfo} ·${quick.cost}⚡`)
           .setStyle(ButtonStyle.Danger)
           .setEmoji('⚔️')
-          .setDisabled(p.power < 1),
+          .setDisabled(p.power < quick.cost),
         new ButtonBuilder()
           .setCustomId(`battle:${battle.id}:act:sig`)
-          .setLabel(`${sig.name} ${sigInfo} ·${config.ABILITY_COST}⚡`)
+          .setLabel(`${sig.name} ${sigInfo} ·${sig.cost}⚡`)
           .setStyle(ButtonStyle.Success)
           .setEmoji(sig.emoji)
-          .setDisabled(p.power < config.ABILITY_COST),
+          .setDisabled(p.power < sig.cost),
         new ButtonBuilder()
           .setCustomId(`battle:${battle.id}:act:guard`)
           .setLabel(`Guard +${round5(atk * config.BLOCK_SHIELD_RATIO)}🛡 ·1⚡`)
@@ -563,6 +569,11 @@ class BattleManager {
     await this.beginPickPhase(battle);
   }
 
+  // Rough team strength for the underdog boost.
+  teamScore(team) {
+    return team.reduce((s, m) => s + m.fruit.atk + m.fruit.hp / 2, 0);
+  }
+
   async handlePick(interaction, battle, forUserId) {
     if (battle.phase !== 'pick') return interaction.deferUpdate();
     if (interaction.user.id !== forUserId) {
@@ -571,16 +582,37 @@ class BattleManager {
     const player = battle.players[forUserId];
     if (player.team.length > 0) return interaction.deferUpdate();
 
-    player.team = interaction.values.map((fid) => {
-      const fruit = getFruit(fid);
-      return { fruit, hp: fruit.hp, maxHp: fruit.hp };
-    });
+    // Budget check — rarity has a cost, so a mythic squad can't stomp for free.
+    const picks = interaction.values.map((fid) => getFruit(fid));
+    const cost = picks.reduce((s, f) => s + (config.RARITY_COST[f.rarity] || 1), 0);
+    if (cost > config.TEAM_POINTS) {
+      return interaction.reply({
+        content:
+          `❌ That team costs **${cost} points** — the budget is **${config.TEAM_POINTS}**!\n` +
+          picks.map((f) => `• ${f.name}: ${config.RARITY_COST[f.rarity]}pt`).join('\n') +
+          '\nDrop something and draft again.',
+        ephemeral: true,
+      });
+    }
+
+    player.team = picks.map((fruit) => ({ fruit, hp: fruit.hp, maxHp: fruit.hp }));
     player.active = 0;
     await interaction.deferUpdate();
 
     const bothPicked = Object.values(battle.players).every((p) => p.team.length > 0);
     if (!bothPicked) {
       return this.renderAllViews(battle);
+    }
+
+    // Underdog boost: the weaker team banks bonus starting energy.
+    const [a, b] = battle.order.map((uid) => battle.players[uid]);
+    const [scoreA, scoreB] = [this.teamScore(a.team), this.teamScore(b.team)];
+    const weaker = scoreA < scoreB ? a : b;
+    const gap = 1 - Math.min(scoreA, scoreB) / Math.max(scoreA, scoreB);
+    const boost = Math.min(config.UNDERDOG_MAX, Math.floor(gap / config.UNDERDOG_STEP));
+    if (boost > 0) {
+      weaker.power += boost;
+      battle.log.push(`🐢 Underdog boost: **${weaker.user.displayName}** starts with **+${boost}⚡**!`);
     }
 
     battle.phase = 'fight';
@@ -633,13 +665,52 @@ class BattleManager {
     const moves = movesFor(mon.fruit);
 
     if (verb === 'quick') {
-      if (p.power < 1) return interaction.deferUpdate();
-      p.power -= 1;
-      const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 0.7));
-      battle.log.push(
-        `⚔️ **${mon.fruit.name}** uses **${moves.quick.name}** — **${res.dealt}** damage${res.note}` +
-          (res.absorbed > 0 ? ` (🛡️ ${res.absorbed} blocked)` : '') + '!'
-      );
+      const quick = moves.quick;
+      if (p.power < quick.cost) return interaction.deferUpdate();
+      p.power -= quick.cost;
+      const base = round5((quick.dmg / mon.fruit.atk) * atk);
+      const name = `**${quick.name}**`;
+      if (quick.flips === 1) {
+        // Lucky Strike: heads lands big, tails whiffs entirely.
+        const heads = crypto.randomInt(2) === 0;
+        if (heads) {
+          const res = this.dealDamage(battle, attackerId, defenderId, base);
+          battle.log.push(`🪙 **${mon.fruit.name}** uses ${name} — *Heads!* **${res.dealt}** damage${res.note}!`);
+        } else {
+          battle.log.push(`🪙 **${mon.fruit.name}** uses ${name} — *Tails...* a total whiff!`);
+        }
+      } else if (quick.flips === 2) {
+        const flips = [crypto.randomInt(2) === 0, crypto.randomInt(2) === 0];
+        const heads = flips.filter(Boolean).length;
+        let total = 0;
+        for (let i = 0; i < heads; i++) {
+          const res = this.dealDamage(battle, attackerId, defenderId, base);
+          total += res.dealt;
+          if (res.fainted) break;
+        }
+        const flipText = flips.map((f) => (f ? 'Heads' : 'Tails')).join(', ');
+        battle.log.push(
+          `🪙 **${mon.fruit.name}** uses ${name} — flips: *${flipText}* — ` +
+            (heads > 0 ? `**${total}** damage!` : 'nothing lands!')
+        );
+      } else {
+        const res = this.dealDamage(battle, attackerId, defenderId, base, { pierce: quick.pierce });
+        let extra = '';
+        if (quick.drain) {
+          const heal = Math.round(res.dealt / 2);
+          mon.hp = Math.min(mon.maxHp, mon.hp + heal);
+          extra = `, drinks back **${heal}** HP`;
+        }
+        if (quick.shieldMult > 0) {
+          const gained = round5(atk * quick.shieldMult);
+          p.shield += gained;
+          extra = `, +**${gained}** shield`;
+        }
+        battle.log.push(
+          `⚔️ **${mon.fruit.name}** uses ${name} — **${res.dealt}**${quick.pierce ? ' piercing' : ''} damage${res.note}${extra}` +
+            (res.absorbed > 0 ? ` (🛡️ ${res.absorbed} blocked)` : '') + '!'
+        );
+      }
     } else if (verb === 'guard') {
       if (p.power < 1) return interaction.deferUpdate();
       p.power -= 1;
@@ -655,8 +726,8 @@ class BattleManager {
       await interaction.deferUpdate();
       return this.renderAllViews(battle); // show bench choices, turn continues
     } else if (verb === 'sig') {
-      if (p.power < config.ABILITY_COST) return interaction.deferUpdate();
-      p.power -= config.ABILITY_COST;
+      if (p.power < moves.signature.cost) return interaction.deferUpdate();
+      p.power -= moves.signature.cost;
       const kind = mon.fruit.ability;
       const name = `**${moves.signature.name}**`;
       if (kind === 'smash') {
@@ -691,6 +762,41 @@ class BattleManager {
       } else if (kind === 'ripen') {
         p.atkBonus += 10;
         battle.log.push(`📈 **${mon.fruit.name}** uses ${name} — the team gains **+10 ATK** (now +${p.atkBonus})!`);
+      } else if (kind === 'gamble') {
+        const heads = crypto.randomInt(2) === 0;
+        if (heads) {
+          const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 2.6));
+          battle.log.push(`🎲 **${mon.fruit.name}** uses ${name} — *Heads!* A colossal **${res.dealt}** damage${res.note}!`);
+        } else {
+          const recoil = round5(atk * 0.5);
+          mon.hp = Math.max(0, mon.hp - recoil);
+          battle.log.push(`🎲 **${mon.fruit.name}** uses ${name} — *Tails...* it hurts itself for **${recoil}**!`);
+          if (mon.hp === 0) {
+            const alive = p.team.filter((m) => m.hp > 0);
+            battle.log.push(`💀 **${mon.fruit.name}** knocked itself out!`);
+            if (alive.length === 0) {
+              const winner = battle.players[defenderId];
+              await interaction.deferUpdate();
+              return this.finish(battle, winner, p, `🏁 **${p.user.displayName}** gambled it all away!`);
+            }
+            battle.pendingReplace = attackerId;
+          }
+        }
+      } else if (kind === 'cascade') {
+        const flips = [];
+        while (flips.length < 8 && crypto.randomInt(2) === 0) flips.push('Heads');
+        flips.push('Tails');
+        const heads = flips.length - 1;
+        let total = 0;
+        for (let i = 0; i < heads; i++) {
+          const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 0.8));
+          total += res.dealt;
+          if (res.fainted) break;
+        }
+        battle.log.push(
+          `♾️ **${mon.fruit.name}** uses ${name} — flips: *${flips.join(', ')}* — ` +
+            (heads > 0 ? `**${total}** damage over ${heads} hit${heads > 1 ? 's' : ''}!` : 'it fizzles!')
+        );
       }
     } else {
       return interaction.deferUpdate();

@@ -74,6 +74,12 @@ module.exports = {
 
   // Battle feel
   TEAM_SIZE: 3,
+  // Fair drafting: each card costs points by rarity; teams fit the budget.
+  TEAM_POINTS: 9,
+  RARITY_COST: { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 },
+  // Underdog boost: +1 starting energy per this much team-power gap (capped).
+  UNDERDOG_STEP: 0.15,
+  UNDERDOG_MAX: 3,
   POWER_CAP: 10,
   DAMAGE_VARIANCE: 0.15, // damage rolls between 85% and 115% of ATK
   CRIT_CHANCE: 0.1,

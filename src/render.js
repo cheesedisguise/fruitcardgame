@@ -142,7 +142,11 @@ function cardSvg(fruit, variant = 'normal') {
 
   const sig = moves.signature;
   const sigRight = sig.dmg != null ? `${sig.dmg}${sig.kind === 'flurry' ? '×2' : ''}` : sig.heal != null ? `+${sig.heal}` : `+${sig.buff}`;
-  const sigRightLabel = sig.kind === 'flurry' ? 'PER HEADS' : sig.heal != null ? 'HEAL' : sig.buff != null ? 'TEAM ATK' : sig.kind === 'pierce' ? 'PIERCING' : 'DMG';
+  const sigRightLabel =
+    { flurry: 'PER HEADS', cascade: 'PER HEADS', gamble: 'OR RECOIL', pierce: 'PIERCING' }[sig.kind] ||
+    (sig.heal != null ? 'HEAL' : sig.buff != null ? 'TEAM ATK' : 'DMG');
+  const quickNameX = 34 + moves.quick.cost * 16 + 6;
+  const sigNameX = 34 + sig.cost * 16 + 6;
 
   const flavorLines = wrapFlavor(fruit.flavor, 46);
   const flavorSvg = flavorLines
@@ -172,13 +176,14 @@ function cardSvg(fruit, variant = 'normal') {
   <rect x="20" y="72" width="360" height="280" rx="14" fill="#ffffff"/>
 
   <rect x="20" y="360" width="360" height="48" rx="12" fill="#000000" opacity="0.28"/>
-  ${costDots(1, 384)}
-  <text x="62" y="391" font-family="Finger Paint" font-size="16" fill="#ffffff">${esc(moves.quick.name)}</text>
-  <text x="364" y="393" font-family="Finger Paint" font-size="22" fill="#ffffff" text-anchor="end">${moves.quick.dmg}</text>
+  ${costDots(moves.quick.cost, 384)}
+  <text x="${quickNameX}" y="391" font-family="Finger Paint" font-size="16" fill="#ffffff">${esc(moves.quick.name)}</text>
+  <text x="364" y="386" font-family="Finger Paint" font-size="20" fill="#ffffff" text-anchor="end">${moves.quick.dmg}${moves.quick.flips === 2 ? '×2' : moves.quick.flips === 1 ? '?' : ''}</text>
+  <text x="364" y="402" font-family="Finger Paint" font-size="9.5" fill="#ffffff" opacity="0.75" text-anchor="end" letter-spacing="1">${moves.quick.label}</text>
 
   <rect x="20" y="414" width="360" height="48" rx="12" fill="#000000" opacity="0.28"/>
-  ${costDots(3, 438)}
-  <text x="94" y="445" font-family="Finger Paint" font-size="16" fill="#ffffff">${esc(sig.name)}</text>
+  ${costDots(sig.cost, 438)}
+  <text x="${sigNameX}" y="445" font-family="Finger Paint" font-size="16" fill="#ffffff">${esc(sig.name)}</text>
   <text x="364" y="440" font-family="Finger Paint" font-size="20" fill="#ffffff" text-anchor="end">${sigRight}</text>
   <text x="364" y="456" font-family="Finger Paint" font-size="9.5" fill="#ffffff" opacity="0.75" text-anchor="end" letter-spacing="1">${sigRightLabel}</text>
 

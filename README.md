@@ -51,21 +51,31 @@ Everything also works as plain text commands:
 
 ## Battle system
 
-Draft **3 fruits** from your collection. One fights, two wait on the bench.
-You gain **1⚡ energy each turn** (cap 10) and spend it:
+**Fair drafting:** pick up to 3 fruits within a **9-point budget** (Common 1pt,
+Uncommon 2, Rare 3, Epic 4, Legendary 5, Mythic 6) — big cards mean small
+teams. If your squad is still statistically weaker, you start with an
+**underdog boost** of up to +3⚡.
 
-| Action | Cost | Effect |
-|---|---|---|
-| ⚔️ Quick attack | 1⚡ | Your fruit's printed light move (0.7× ATK, rounded to 5s) |
-| ✨ Signature move | 3⚡ | Named per fruit — Smash 1.8× · Pierce 1.2× (ignores shields & types) · Drain 0.9× + lifesteal · Flurry: flip 2 coins, 0.9× per heads · Regrow: heal 50% · Ripen: +10 team ATK |
-| 🛡️ Guard | 1⚡ | Gain shield = 75% of ATK (stacks, absorbs damage) |
-| 🔄 Retreat | 1⚡ | Swap in a bench fruit |
-| ⚡ Charge | free | Bank +1⚡ |
+You gain **1⚡ energy each turn** (cap 10) and spend it on your fruit's two
+printed moves, or the universal actions:
 
-Damage is deterministic like the real TCG (coin-flip moves excepted) and
-type-adjusted: each type is **super effective (×1.5)** against the next in the
-cycle Citrus → Vine → Stone → Berry → Tropical → Orchard → Citrus, and resists
-(×0.75) the type it beats. Knock out all three enemy fruits to win.
+**Light moves** (7 archetypes, printed per card): plain type jab (1⚡, 0.7×) ·
+Power Strike (2⚡, 0.95×) · Lucky Strike (1⚡ — flip: 1.3× or whiff) · Twin Tap
+(1⚡ — flip 2, 0.5× per heads) · Guard Strike (2⚡, hit + shield) · Leech Bite
+(2⚡, hit + heal half) · Piercing Lance (2⚡, ignores shields & types)
+
+**Signature moves** (8 archetypes, uniquely named per fruit): Regrow heal 50%
+(2⚡) · Ripen +10 team ATK (2⚡) · Flurry flip 2, 0.9× per heads (2⚡) · Smash
+1.8× (3⚡) · Pierce 1.2× ignoring everything (3⚡) · Drain 0.9× + lifesteal
+(3⚡) · **Gamble** — flip: heads 2.6×, tails you take recoil (4⚡) · **Cascade**
+— flip until tails, 0.8× per heads (4⚡)
+
+**Universal:** 🛡️ Guard (1⚡, shield = 75% ATK) · 🔄 Retreat (1⚡) · ⚡ Charge (bank +1)
+
+Non-flip damage is deterministic like the real TCG and type-adjusted: each
+type is **super effective (×1.5)** against the next in the cycle Citrus → Vine
+→ Stone → Berry → Tropical → Orchard → Citrus, and resists (×0.75) the type it
+beats. Knock out the whole enemy team to win.
 
 ## Setup
 

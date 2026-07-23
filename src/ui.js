@@ -259,10 +259,22 @@ async function cardScreen(ctx, user, fruitId, variant, source) {
 
   const sigEffect =
     sig.dmg != null
-      ? `${sig.dmg} damage${sig.kind === 'flurry' ? ' per heads (flip 2 coins)' : sig.kind === 'pierce' ? ', ignores shields & types' : sig.kind === 'drain' ? ', heals half back' : ''}`
+      ? `${sig.dmg} damage${
+          {
+            flurry: ' per heads (flip 2 coins)',
+            cascade: ' per heads (flip until tails!)',
+            gamble: ' on heads — tails hurts yourself',
+            pierce: ', ignores shields & types',
+            drain: ', heals half back',
+          }[sig.kind] || ''
+        }`
       : sig.heal != null
         ? `heal ${sig.heal} HP`
         : `+${sig.buff} team ATK`;
+  const quick = moves.quick;
+  const quickEffect = `${quick.dmg} damage${
+    { lucky: ' — coin flip: hit or whiff', twin: ' per heads (flip 2 coins)', guard: ' + shield', leech: ', heals half back', lance: ', ignores shields & types' }[quick.kind] || ''
+  }`;
   const ownedText = ['normal', 'foil', 'gold', 'prism']
     .map((v) => `${v === 'normal' ? '🃏' : config.VARIANTS[v].fallbackEmoji} ${ownedOf(v)}`)
     .join(' · ');
@@ -280,8 +292,8 @@ async function cardScreen(ctx, user, fruitId, variant, source) {
         value: `Weak to ${temoji(type.weakTo)} ${TYPES[type.weakTo].name} (×1.5) · Resists ${temoji(type.resists)} ${TYPES[type.resists].name} (×0.75)`,
         inline: false,
       },
-      { name: `⚔️ ${moves.quick.name} (1⚡)`, value: `${moves.quick.dmg} damage`, inline: true },
-      { name: `${sig.emoji} ${sig.name} (${config.ABILITY_COST}⚡)`, value: sigEffect, inline: true },
+      { name: `⚔️ ${quick.name} (${quick.cost}⚡)`, value: quickEffect, inline: true },
+      { name: `${sig.emoji} ${sig.name} (${sig.cost}⚡)`, value: sigEffect, inline: true },
       { name: 'You own', value: ownedText, inline: false },
       { name: 'Sell value', value: `${sellValue(fruit, variant)} 🪙`, inline: true }
     )
@@ -501,9 +513,9 @@ async function tutorialScreen(ctx, user, topic = 'basics') {
       .setTitle('🎓 Tutorial — Battling')
       .setDescription(
         `⚔️ Battle with \`fbattle @friend\` or matchmake with **Find Battle** — matches run in private threads, even across servers!\n\n` +
-          `**1.** Draft a team of ${config.TEAM_SIZE} fruits — one fights, the rest wait on the bench\n` +
+          `**1.** Draft up to ${config.TEAM_SIZE} fruits within the **${config.TEAM_POINTS}-point budget** (Common 1pt → Mythic 6pt) — rare cards are stronger but cost more, so mixed teams rule. Outgunned anyway? The weaker team starts with bonus ⚡\n` +
           `**2.** You gain **1⚡ energy** at the start of each turn (bank up to ${config.POWER_CAP})\n` +
-          `**3.** Spend it: quick attack (1⚡), **signature move** (3⚡), Guard (1⚡, shield), Retreat (1⚡, swap fruit), or Charge (bank +1⚡)\n` +
+          `**3.** Spend it on your fruit's printed moves — light attacks cost 1-2⚡, signature moves 2-4⚡, many flip coins Pokémon-style (Lucky Strike hits big or whiffs; Cascade flips until tails!) — plus Guard (1⚡), Retreat (1⚡), or Charge (+1⚡)\n` +
           `**4.** Knock out all ${config.TEAM_SIZE} enemy fruits to win coins!\n\n` +
           `**Type matchups** (×1.5 damage, and each type resists the one it beats ×0.75):\n${chart}\n\n` +
           `*Tip: check a card's Matchups before drafting — a well-typed team wins uphill fights.*`

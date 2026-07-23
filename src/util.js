@@ -103,7 +103,7 @@ function extractVariant(tokens) {
 }
 
 function coins(n) {
-  return `**${Number(n).toLocaleString('en-US')}** ${config.CURRENCY_EMOJI}`;
+  return `**${Number(n).toLocaleString('en-US')}** ${gemoji('coin', config.CURRENCY_EMOJI)}`;
 }
 
 function timeUntil(ms) {
@@ -137,6 +137,17 @@ function temoji(typeKey) {
   return TYPES[typeKey].emoji;
 }
 
+// Generic icon lookup: any custom emoji by name (:coin:, :energy:, :shield:,
+// :smash:, ...) with a unicode fallback. Embed/message text only — Discord
+// button labels can't render custom emojis.
+function gemoji(name, fallback) {
+  if (emojiClient) {
+    const custom = emojiClient.emojis.cache.find((e) => e.name === name);
+    if (custom) return custom.toString();
+  }
+  return fallback;
+}
+
 // Variant tag like " ✨FOIL" — uses a custom :foil:/:gold:/:prism: server
 // emoji when the bot can see one, otherwise the fallback emoji.
 function variantLabel(variant) {
@@ -164,6 +175,7 @@ module.exports = {
   setEmojiClient,
   remoji,
   temoji,
+  gemoji,
   variantLabel,
   RARITY_ORDER,
   RARITY_RANK,
