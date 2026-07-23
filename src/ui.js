@@ -168,41 +168,15 @@ async function openScreen(ctx, user, packId) {
   const best = result.cards.reduce((a, b) =>
     rarityKeys.indexOf(b.fruit.rarity) > rarityKeys.indexOf(a.fruit.rarity) ? b : a
   );
-  const bestVariant = result.cards.reduce(
-    (top, c) => Math.max(top, ['normal', 'foil', 'gold', 'prism'].indexOf(c.variant)),
-    0
-  );
-
-  // Make good pulls FEEL good: escalating titles, and epic+ pulls (or shiny
-  // variants) get a loud callout line above the embed.
-  const hypeTitles = {
-    common: `${result.pack.emoji} ${result.pack.name} Opened!`,
-    uncommon: `${result.pack.emoji} ${result.pack.name} Opened!`,
-    rare: `🔵 Nice! A Rare pull!`,
-    epic: `💜 EPIC PULL!`,
-    legendary: `🌟 LEGENDARY PULL!!`,
-    mythic: `🍎 MYTHIC!!! THE RAREST OF THEM ALL!`,
-  };
-  let content = '';
-  const shinyCard = result.cards.find((c) => c.variant !== 'normal');
-  if (['epic', 'legendary', 'mythic'].includes(best.fruit.rarity)) {
-    const bang = { epic: '🎉', legendary: '🎆 🎆', mythic: '🌟🎆🍎🎆🌟' }[best.fruit.rarity];
-    content = `${bang} **${user.displayName}** pulled ${remoji(best.fruit.rarity)} **${best.fruit.name}**${variantLabel(
-      result.cards.find((c) => c.fruit.id === best.fruit.id)?.variant || 'normal'
-    )} — a **${RARITIES[best.fruit.rarity].name.toUpperCase()}**! ${bang}`;
-  } else if (bestVariant >= 1 && shinyCard) {
-    content = `✨ **${user.displayName}** pulled a${variantLabel(shinyCard.variant)} **${shinyCard.fruit.name}**! Shiny!`;
-  }
 
   const embed = new EmbedBuilder()
-    .setColor(bestVariant >= 2 ? 0xffd700 : RARITIES[best.fruit.rarity].color)
-    .setTitle(hypeTitles[best.fruit.rarity])
+    .setColor(RARITIES[best.fruit.rarity].color)
+    .setTitle(`✨ ${result.pack.name} Opened!`)
     .setDescription(lines.join('\n'))
     .setImage('attachment://pack.png')
     .setFooter({ text: `${result.packsLeft} ${result.pack.name}(s) left` });
 
   return {
-    content,
     embeds: [embed],
     files: [new AttachmentBuilder(image, { name: 'pack.png' })],
     components: [
