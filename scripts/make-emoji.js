@@ -115,11 +115,17 @@ const ICON_EMOJI = {
   },
   battle: {
     color: '#8d6e63', dark: '#4e342e',
-    glyph: `<g stroke-linecap="round">
-      <line x1="34" y1="34" x2="86" y2="86" stroke="#ffffff" stroke-width="10"/>
-      <line x1="94" y1="34" x2="42" y2="86" stroke="#ffffff" stroke-width="10"/>
-      <line x1="80" y1="92" x2="94" y2="106" stroke="#ffd54f" stroke-width="9"/>
-      <line x1="48" y1="92" x2="34" y2="106" stroke="#ffd54f" stroke-width="9"/>
+    glyph: `<g transform="rotate(-45 64 64)">
+      <polygon points="64,18 69,26 69,74 59,74 59,26" fill="#ffffff"/>
+      <rect x="47" y="74" width="34" height="7" rx="3.5" fill="#ffd54f"/>
+      <rect x="60" y="81" width="8" height="15" rx="4" fill="#ffd54f"/>
+      <circle cx="64" cy="100" r="5" fill="#ffca28"/>
+    </g>
+    <g transform="rotate(45 64 64)">
+      <polygon points="64,18 69,26 69,74 59,74 59,26" fill="#ffffff"/>
+      <rect x="47" y="74" width="34" height="7" rx="3.5" fill="#ffd54f"/>
+      <rect x="60" y="81" width="8" height="15" rx="4" fill="#ffd54f"/>
+      <circle cx="64" cy="100" r="5" fill="#ffca28"/>
     </g>`,
   },
   pack: {
