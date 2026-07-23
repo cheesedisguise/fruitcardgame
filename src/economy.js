@@ -83,8 +83,11 @@ async function openPack(db, userId, requestedPack) {
     const pack = config.PACKS[packRow.pack_id] || config.PACKS.standard;
 
     const cards = rollPack(pack);
+    // "NEW" means first time EVER pulling this fruit — a collections row exists
+    // from the first copy onward (selling only zeroes the quantity), so row
+    // existence is the "have I ever had this?" check.
     const { rows } = await client.query(
-      `SELECT DISTINCT fruit_id FROM collections WHERE user_id = $1 AND quantity > 0 AND fruit_id = ANY($2)`,
+      `SELECT DISTINCT fruit_id FROM collections WHERE user_id = $1 AND fruit_id = ANY($2)`,
       [userId, cards.map((c) => c.fruit.id)]
     );
     const ownedBefore = new Set(rows.map((r) => r.fruit_id));
