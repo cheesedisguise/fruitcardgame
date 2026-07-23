@@ -13,7 +13,14 @@ const { setEmojiClient, remoji, variantLabel, coins } = require('./util');
 const { getFruit } = require('./fruits');
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    // Keeps the custom-emoji cache (:common:, :citrus:, :coin:, ...) current
+    // when emojis are uploaded while the bot is running.
+    GatewayIntentBits.GuildEmojisAndStickers,
+  ],
 });
 
 // Load every command in src/commands, keyed by name and each alias.
