@@ -18,7 +18,7 @@ const {
 const config = require('./config');
 const economy = require('./economy');
 const { FRUITS, RARITIES, TYPES, getFruit, movesFor } = require('./fruits');
-const { coins, remoji, temoji, sortByRarity, sellValue, variantLabel, timeUntil } = require('./util');
+const { coins, remoji, temoji, gemoji, sortByRarity, sellValue, variantLabel, timeUntil } = require('./util');
 
 const BRAND_COLOR = 0x66bb6a;
 const PAGE_SIZE = 10;
@@ -105,7 +105,7 @@ async function shopScreen(ctx, user, note = null) {
       .map(([rarity, w]) => `${remoji(rarity)} ${(w / 10).toFixed(w % 10 === 0 ? 0 : 1)}%`)
       .join(' ');
     const variantOdds = Object.entries(pack.variantChances || {})
-      .map(([v, c]) => `${config.VARIANTS[v].fallbackEmoji} ${(c * 100).toFixed(c * 100 < 1 ? 2 : 1).replace(/\.?0+$/, '')}%`)
+      .map(([v, c]) => `${gemoji(v, config.VARIANTS[v].fallbackEmoji)} ${(c * 100).toFixed(c * 100 < 1 ? 2 : 1).replace(/\.?0+$/, '')}%`)
       .join(' · ');
     embed.addFields({
       name: `${pack.emoji} ${pack.name} — ${pack.price} ${config.CURRENCY_EMOJI} (you own ${ownedOf(pack.id)})`,
@@ -281,7 +281,7 @@ async function cardScreen(ctx, user, fruitId, variant, source, note = null) {
     { lucky: ' — coin flip: hit or whiff', twin: ' per heads (flip 2 coins)', guard: ' + shield', leech: ', heals half back', lance: ', ignores shields & types' }[quick.kind] || ''
   }`;
   const ownedText = ['normal', 'foil', 'gold', 'prism']
-    .map((v) => `${v === 'normal' ? '🃏' : config.VARIANTS[v].fallbackEmoji} ${ownedOf(v)}`)
+    .map((v) => `${v === 'normal' ? '🃏' : gemoji(v, config.VARIANTS[v].fallbackEmoji)} ${ownedOf(v)}`)
     .join(' · ');
 
   const embed = new EmbedBuilder()
@@ -506,7 +506,7 @@ async function tutorialScreen(ctx, user, topic = 'basics') {
         `📦 Buy packs in the **Shop** — every pack holds **5 cards**.\n` +
           `• ${config.PACKS.standard.emoji} Standard (${config.PACKS.standard.price}🪙) · ${config.PACKS.juicy.emoji} Juicy (${config.PACKS.juicy.price}🪙, better odds) · ${config.PACKS.exotic.emoji} Exotic (${config.PACKS.exotic.price}🪙, best odds)\n` +
           `• Pricier packs guarantee rarer cards and roll better ✨ variant chances\n\n` +
-          `🌈 **Variants**: cards can drop as ✨ Foil (sell ×4), 🥇 Gold (×10), or 🌈 Prism (×25) — same stats, way cooler card\n` +
+          `${gemoji('prism', '🌈')} **Variants**: cards can drop as ${gemoji('foil', '✨')} Foil (sell ×4), ${gemoji('gold', '🥇')} Gold (×10), or ${gemoji('prism', '🌈')} Prism (×25) — same stats, way cooler card\n` +
           `🆕 marks a fruit you've never pulled before\n` +
           `💰 Selling is easy: \`fsell dupes\` clears every duplicate (keeps one of each), \`fsell all common\` dumps a whole rarity (shinies stay safe), or use the **Sell dupes** button right in your Collection\n` +
           `📖 Track your completion in the **FruitDex** — inspect any card, even undiscovered ones`
