@@ -25,18 +25,10 @@ module.exports = {
   async execute(message, args, ctx) {
     const invoked = message.content.trim().split(/\s+/)[0].toLowerCase();
 
-    // fauctions — browse open listings
+    // fauctions — browse open listings in the GUI (select a listing to bid)
     if (invoked === 'fauctions' || (invoked === 'fauction' && args.length === 0)) {
-      const open = await ctx.db.listOpenAuctions(15);
-      if (open.length === 0) {
-        return message.reply('🏛️ The auction house is empty! List a card: `fauction <fruit> [foil] [minBid]`');
-      }
-      const embed = new EmbedBuilder()
-        .setColor(0xd35400)
-        .setTitle('🏛️ Auction House')
-        .setDescription(open.map(describeAuction).join('\n'))
-        .setFooter({ text: 'Bid with fbid <id> <amount> · auctions are cross-server' });
-      return message.reply({ embeds: [embed] });
+      const ui = require('../ui');
+      return message.reply(await ui.auctionScreen(ctx, message.author));
     }
 
     // fbid <id> <amount>

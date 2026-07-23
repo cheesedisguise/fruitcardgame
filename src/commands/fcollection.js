@@ -58,10 +58,16 @@ module.exports = {
   usage: 'fcards [@user] [page]',
   buildPage,
   async execute(message, args, ctx) {
-    const viewedUser = message.mentions.users.first() || message.author;
+    const viewedUser = message.mentions.users.first();
     const pageArg = parseInt(args.find((a) => /^\d+$/.test(a)), 10) || 1;
-    const payload = await buildPage(ctx, viewedUser, pageArg, message.author.id);
-    await message.reply(payload);
+    if (viewedUser && viewedUser.id !== message.author.id) {
+      // Read-only view of someone else's collection.
+      const payload = await buildPage(ctx, viewedUser, pageArg, message.author.id);
+      return message.reply(payload);
+    }
+    // Your own collection opens the full GUI with the card inspector.
+    const ui = require('../ui');
+    await message.reply(await ui.collectionScreen(ctx, message.author, pageArg));
   },
   async handleComponent(interaction, ctx) {
     const [, viewedId, pageStr, invokerId] = interaction.customId.split(':');

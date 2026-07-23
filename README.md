@@ -29,7 +29,8 @@ Everything also works as plain text commands:
 | `fstart` | Create your account & learn the ropes |
 | `fdaily` | Claim daily coins (🔥 streak bonus) |
 | `fdrop` | Coin drop every 2 min — 50% chance to chain +10 infinitely |
-| `fopen [pack]` | Open a pack — 5 cards revealed |
+| `fcode <code>` | Redeem a code (try `fcode release` 👀) |
+| `fopen [pack]` | Pack opening GUI — rip packs with buttons |
 | `fcards [@user] [page]` | Browse a collection (foils marked ✨) |
 | `fcard <fruit> [foil]` | View a card up close, its ability & fact |
 | `fdex` | FruitDex — track all 37 fruits |
@@ -116,6 +117,13 @@ assets/fonts/    bundled fonts (SIL OFL): Finger Paint (card text), Nunito
 assets/emoji/    rarity emoji images to upload as :common: etc.
 ATTRIBUTIONS.md  photo credits & licenses
 ```
+
+## Redeem codes
+
+Codes live in [`assets/listofcodes.json`](assets/listofcodes.json). Each entry
+can grant `coins` and/or `packs`, with an optional `expires` date; every player
+can redeem each code once. Add a code to the file, redeploy, and it's live.
+The launch code **`release`** grants 5,000 🪙.
 
 ## Game balance
 

@@ -1,0 +1,8 @@
+{
+  "_readme": "FruitCards redeem codes. Key = the code players type with fcode (case-insensitive). Each code can grant 'coins' and/or 'packs' (pack id -> count). Optional 'expires' (ISO date) disables the code after that moment. Each player can redeem each code once. Add a code here, redeploy, and it's live.",
+
+  "release": {
+    "coins": 5000,
+    "note": "Launch celebration code!"
+  }
+}

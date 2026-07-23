@@ -81,7 +81,8 @@ async function homeScreen(ctx, user) {
         btn('daily', '', '', user.id, 'Daily', ButtonStyle.Secondary, '🪙'),
         btn('drop', '', '', user.id, 'Drop', ButtonStyle.Secondary, '💧'),
         btn('queue', '', '', user.id, inQueue ? 'Leave Queue' : 'Find Battle', inQueue ? ButtonStyle.Danger : ButtonStyle.Success, '⚔️'),
-        btn('dex', '', '', user.id, 'FruitDex', ButtonStyle.Secondary, '📖')
+        btn('dex', '', '', user.id, 'FruitDex', ButtonStyle.Secondary, '📖'),
+        btn('top', '', '', user.id, 'Top', ButtonStyle.Secondary, '🏆')
       ),
     ],
   };
@@ -241,7 +242,8 @@ async function collectionScreen(ctx, user, page) {
   return { embeds: [embed], files: [], components };
 }
 
-async function cardScreen(ctx, user, fruitId, variant, page) {
+// source: a collection page number, or 'd' when opened from the FruitDex.
+async function cardScreen(ctx, user, fruitId, variant, source) {
   const fruit = getFruit(fruitId);
   if (!fruit) return collectionScreen(ctx, user, 1);
   const { rows } = await ctx.db.pool.query(
@@ -257,7 +259,7 @@ async function cardScreen(ctx, user, fruitId, variant, page) {
   const embed = new EmbedBuilder()
     .setColor(rarity.color)
     .setTitle(`${remoji(fruit.rarity)} ${fruit.name}${variant === 'foil' ? ' ✨FOIL' : ''}`)
-    .setDescription(`*${fruit.flavor}*`)
+    .setDescription(`🧠 *Fun fact: ${fruit.flavor}*`)
     .addFields(
       { name: 'Rarity', value: rarity.name, inline: true },
       { name: 'ATK', value: `⚔️ ${fruit.atk}`, inline: true },
@@ -269,13 +271,18 @@ async function cardScreen(ctx, user, fruitId, variant, page) {
     .setImage('attachment://card.png');
 
   const other = variant === 'foil' ? 'normal' : 'foil';
+  const src = source || 1;
+  const backButton =
+    src === 'd'
+      ? btn('dex', '', '', user.id, 'FruitDex', ButtonStyle.Secondary, '📖')
+      : btn('col', src, '', user.id, 'Collection', ButtonStyle.Secondary, '🃏');
   return {
     embeds: [embed],
     files: [new AttachmentBuilder(image, { name: 'card.png' })],
     components: [
       new ActionRowBuilder().addComponents(
-        btn('col', page || 1, '', user.id, 'Collection', ButtonStyle.Secondary, '🃏'),
-        btn('card', fruitId, `${other}|${page || 1}`, user.id, other === 'foil' ? 'View Foil' : 'View Normal', ButtonStyle.Primary, '✨'),
+        backButton,
+        btn('card', fruitId, `${other}|${src}`, user.id, other === 'foil' ? 'View Foil' : 'View Normal', ButtonStyle.Primary, '✨'),
         btn('home', '', '', user.id, 'Home', ButtonStyle.Secondary, '🏠')
       ),
     ],
@@ -365,7 +372,10 @@ async function dexScreen(ctx, user) {
   const embed = new EmbedBuilder()
     .setColor(0x1abc9c)
     .setTitle(`📖 ${user.displayName}'s FruitDex`)
-    .setDescription(`Discovered **${FRUITS.filter((f) => owned.has(f.id)).length}/${FRUITS.length}** fruits`);
+    .setDescription(
+      `Discovered **${FRUITS.filter((f) => owned.has(f.id)).length}/${FRUITS.length}** fruits\n` +
+        `*Pick any fruit below to study its card — even ones you haven't caught yet!*`
+    );
   for (const [key, rarity] of Object.entries(RARITIES)) {
     const fruits = FRUITS.filter((f) => f.rarity === key);
     embed.addFields({
@@ -374,6 +384,59 @@ async function dexScreen(ctx, user) {
       inline: true,
     });
   }
+
+  // 37 fruits > 25-option limit, so the inspector is split into two menus.
+  const dexOption = (f) => ({
+    label: f.name,
+    description: owned.has(f.id) ? `Owned ×${owned.get(f.id)}` : 'Not discovered yet',
+    value: `${f.id}|normal|d`,
+    emoji: remoji(f.rarity),
+  });
+  const groupA = FRUITS.filter((f) => ['common', 'uncommon'].includes(f.rarity));
+  const groupB = FRUITS.filter((f) => !['common', 'uncommon'].includes(f.rarity));
+  return {
+    embeds: [embed],
+    files: [],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(cid('dexsel', 'a', '', user.id))
+          .setPlaceholder('🔍 Inspect: Common & Uncommon...')
+          .addOptions(groupA.map(dexOption))
+      ),
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(cid('dexsel', 'b', '', user.id))
+          .setPlaceholder('🔍 Inspect: Rare → Mythic...')
+          .addOptions(groupB.map(dexOption))
+      ),
+      backRow(user.id),
+    ],
+  };
+}
+
+async function topScreen(ctx, user) {
+  const rows = await ctx.db.getLeaderboard(10);
+  const MEDALS = ['🥇', '🥈', '🥉'];
+  const lines = await Promise.all(
+    rows.map(async (row, i) => {
+      const u = await ctx.client.users.fetch(row.user_id).catch(() => null);
+      const name = u ? u.displayName : 'Unknown Farmer';
+      return `${MEDALS[i] || `**${i + 1}.**`} **${name}** — ${coins(row.balance)} · 🏆 ${row.wins}W`;
+    })
+  );
+  const embed = new EmbedBuilder()
+    .setColor(0xf1c40f)
+    .setTitle('🏆 FruitCards Leaderboard')
+    .setDescription(lines.length > 0 ? lines.join('\n') : 'Nobody here yet — be the first with `fstart`!');
+  return { embeds: [embed], files: [], components: [backRow(user.id)] };
+}
+
+async function helpScreen(ctx, user) {
+  const lines = [...new Set(ctx.commands.values())]
+    .map((c) => `\`${c.usage}\` — ${c.description}`)
+    .join('\n');
+  const embed = new EmbedBuilder().setColor(0x3498db).setTitle('🍇 FruitCards Commands').setDescription(lines);
   return { embeds: [embed], files: [], components: [backRow(user.id)] };
 }
 
@@ -422,16 +485,18 @@ async function handleComponent(interaction, ctx) {
   } else if (action === 'packs') payload = await packsScreen(ctx, user);
   else if (action === 'open') payload = await openScreen(ctx, user, a);
   else if (action === 'col') payload = await collectionScreen(ctx, user, parseInt(a, 10) || 1);
-  else if (action === 'colsel') {
-    const [fruitId, variant, page] = interaction.values[0].split('|');
-    payload = await cardScreen(ctx, user, fruitId, variant, parseInt(page, 10) || 1);
+  else if (action === 'colsel' || action === 'dexsel') {
+    const [fruitId, variant, source] = interaction.values[0].split('|');
+    payload = await cardScreen(ctx, user, fruitId, variant, source === 'd' ? 'd' : parseInt(source, 10) || 1);
   } else if (action === 'card') {
-    const [variant, page] = (b || 'normal|1').split('|');
-    payload = await cardScreen(ctx, user, a, variant || 'normal', parseInt(page, 10) || 1);
+    const [variant, source] = (b || 'normal|1').split('|');
+    payload = await cardScreen(ctx, user, a, variant || 'normal', source === 'd' ? 'd' : parseInt(source, 10) || 1);
   } else if (action === 'auc') payload = await auctionScreen(ctx, user);
   else if (action === 'daily') payload = await dailyScreen(ctx, user);
   else if (action === 'drop') payload = await dropScreen(ctx, user);
   else if (action === 'dex') payload = await dexScreen(ctx, user);
+  else if (action === 'top') payload = await topScreen(ctx, user);
+  else if (action === 'help') payload = await helpScreen(ctx, user);
   else if (action === 'queue') {
     if (ctx.matchmaking.queue.has(user.id)) {
       ctx.matchmaking.remove(user.id);
@@ -498,4 +563,19 @@ async function handleModal(interaction, ctx) {
   }
 }
 
-module.exports = { handleComponent, handleModal, homeScreen, shopScreen };
+module.exports = {
+  handleComponent,
+  handleModal,
+  homeScreen,
+  shopScreen,
+  packsScreen,
+  openScreen,
+  collectionScreen,
+  cardScreen,
+  auctionScreen,
+  dailyScreen,
+  dropScreen,
+  dexScreen,
+  topScreen,
+  helpScreen,
+};

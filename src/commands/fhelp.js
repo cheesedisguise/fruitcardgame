@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const ui = require('../ui');
 
 module.exports = {
   name: 'fhelp',
@@ -6,13 +6,6 @@ module.exports = {
   description: 'Show all commands',
   usage: 'fhelp',
   async execute(message, args, ctx) {
-    const lines = [...new Set(ctx.commands.values())]
-      .map((c) => `\`${c.usage}\` — ${c.description}`)
-      .join('\n');
-    const embed = new EmbedBuilder()
-      .setColor(0x3498db)
-      .setTitle('🍇 FruitCards Commands')
-      .setDescription(lines);
-    await message.reply({ embeds: [embed] });
+    await message.reply(await ui.helpScreen(ctx, message.author));
   },
 };

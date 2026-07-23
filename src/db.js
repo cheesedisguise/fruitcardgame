@@ -46,6 +46,12 @@ async function init() {
       quantity INT NOT NULL DEFAULT 0 CHECK (quantity >= 0),
       PRIMARY KEY (user_id, pack_id)
     );
+    CREATE TABLE IF NOT EXISTS code_redemptions (
+      user_id     TEXT NOT NULL,
+      code        TEXT NOT NULL,
+      redeemed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, code)
+    );
     CREATE TABLE IF NOT EXISTS auctions (
       id          BIGSERIAL PRIMARY KEY,
       seller_id   TEXT NOT NULL,

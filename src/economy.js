@@ -2,8 +2,12 @@
 // Every mutation goes through withPlayerLock so buttons and commands are
 // equally race-safe.
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const config = require('./config');
 const { rollPack } = require('./util');
+
+const CODES_FILE = path.join(__dirname, '..', 'assets', 'listofcodes.json');
 
 async function claimDaily(db, userId) {
   return db.withPlayerLock(userId, async (client, player) => {
@@ -100,4 +104,56 @@ async function openPack(db, userId, requestedPack) {
   });
 }
 
-module.exports = { claimDaily, claimDrop, buyPacks, openPack };
+// Codes live in assets/listofcodes.json — read fresh on every redeem so a
+// redeploy (or hot edit) is all it takes to ship a new code.
+function loadCodes() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(CODES_FILE, 'utf8'));
+    const codes = {};
+    for (const [key, value] of Object.entries(raw)) {
+      if (key.startsWith('_')) continue; // _readme and friends
+      codes[key.toLowerCase()] = value;
+    }
+    return codes;
+  } catch (err) {
+    console.error('could not read listofcodes.json:', err.message);
+    return {};
+  }
+}
+
+// One redemption per player per code.
+async function redeemCode(db, userId, input) {
+  const codes = loadCodes();
+  const key = String(input || '').trim().toLowerCase();
+  const code = codes[key];
+  if (!code) return { ok: false, reason: 'unknown' };
+  if (code.expires && Date.now() > new Date(code.expires).getTime()) {
+    return { ok: false, reason: 'expired' };
+  }
+
+  return db.withPlayerLock(userId, async (client, player) => {
+    const ins = await client.query(
+      `INSERT INTO code_redemptions (user_id, code) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [userId, key]
+    );
+    if (ins.rowCount === 0) return { ok: false, reason: 'used' };
+
+    const coins = Number(code.coins) || 0;
+    if (coins > 0) {
+      await client.query(`UPDATE players SET balance = balance + $2 WHERE user_id = $1`, [userId, coins]);
+    }
+    const packs = [];
+    for (const [packId, count] of Object.entries(code.packs || {})) {
+      if (!config.PACKS[packId] || !Number.isInteger(count) || count < 1) continue;
+      await client.query(
+        `INSERT INTO packs (user_id, pack_id, quantity) VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, pack_id) DO UPDATE SET quantity = packs.quantity + $3`,
+        [userId, packId, count]
+      );
+      packs.push({ pack: config.PACKS[packId], count });
+    }
+    return { ok: true, code: key, coins, packs, balance: Number(player.balance) + coins };
+  });
+}
+
+module.exports = { claimDaily, claimDrop, buyPacks, openPack, redeemCode };
