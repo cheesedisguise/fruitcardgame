@@ -18,9 +18,9 @@ module.exports = {
     const result = await economy.openPack(ctx.db, message.author.id, requested);
     if (!result.ok) {
       if (result.reason === 'notype') {
-        return message.reply(`❌ You don't have any ${result.pack.emoji} **${result.pack.name}**s! Buy one: \`fbuy ${result.pack.id}\``);
+        return message.reply(`❌ You don't have any ${result.pack.emoji} **${result.pack.name}**s! Buy one in \`fshop\`!`);
       }
-      return message.reply(`❌ You have no unopened packs! Grab one with \`fbuy\` (${config.PACKS.standard.price} ${config.CURRENCY_EMOJI}) or \`fmenu\`.`);
+      return message.reply(`❌ You have no unopened packs! Grab one in \`fshop\` (${config.PACKS.standard.price} ${config.CURRENCY_EMOJI}) or \`fmenu\`.`);
     }
 
     const opening = await message.reply(`${result.pack.emoji} *Ripping open the ${result.pack.name}...*`);

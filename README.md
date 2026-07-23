@@ -29,7 +29,6 @@ Everything also works as plain text commands:
 | `fstart` | Create your account & learn the ropes |
 | `fdaily` | Claim daily coins (🔥 streak bonus) |
 | `fdrop` | Coin drop every 2 min — 50% chance to chain +10 infinitely |
-| `fbuy [pack] [n]` | Buy packs: `standard`, `juicy`, `exotic` |
 | `fopen [pack]` | Open a pack — 5 cards revealed |
 | `fcards [@user] [page]` | Browse a collection (foils marked ✨) |
 | `fcard <fruit> [foil]` | View a card up close, its ability & fact |
@@ -42,7 +41,7 @@ Everything also works as plain text commands:
 | `fbid <id> <amount>` | Bid (coins escrowed, refunded if outbid) |
 | `fsell <fruit> [foil] [n\|all]` | Sell cards for coins |
 | `fbalance` | Your profile & stats |
-| `fshop` | Pack lineup, pull rates, sell values |
+| `fshop` | The pack shop — browse & buy with buttons |
 | `ftop` | Leaderboard |
 | `fhelp` | All commands |
 

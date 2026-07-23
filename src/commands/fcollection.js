@@ -26,7 +26,7 @@ async function buildPage(ctx, viewedUser, page, invokerId) {
           (o) =>
             `${remoji(o.fruit.rarity)} **${o.fruit.name}**${variantLabel(o.variant)} ×${o.qty} · ATK ${o.fruit.atk} / HP ${o.fruit.hp}`
         )
-      : ['*No cards yet — grab a pack with `fbuy` and `fopen`!*'];
+      : ['*No cards yet — grab a pack in `fshop` and `fopen` it!*'];
 
   const embed = new EmbedBuilder()
     .setColor(0x9b59b6)

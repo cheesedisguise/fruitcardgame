@@ -9,7 +9,7 @@ module.exports = {
     }
     const collection = await ctx.db.getCollection(message.author.id);
     if (collection.length === 0) {
-      return message.reply('❌ You need at least one card to battle! `fbuy` then `fopen` first.');
+      return message.reply('❌ You need at least one card to battle! Grab a pack in `fshop` first.');
     }
     await ctx.matchmaking.join(message);
   },

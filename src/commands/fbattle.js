@@ -15,7 +15,7 @@ module.exports = {
       ctx.db.getCollection(message.author.id),
       ctx.db.getCollection(opponent.id),
     ]);
-    if (mine.length === 0) return message.reply('❌ You need at least one card to battle! `fbuy` then `fopen` first.');
+    if (mine.length === 0) return message.reply('❌ You need at least one card to battle! Grab a pack in `fshop` first.');
     if (theirs.length === 0) return message.reply(`❌ ${opponent.displayName} has no cards yet!`);
 
     await ctx.battles.startChallenge(message, message.author, opponent);
