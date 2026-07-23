@@ -104,9 +104,12 @@ async function shopScreen(ctx, user, note = null) {
       .filter(([, w]) => w > 0)
       .map(([rarity, w]) => `${remoji(rarity)} ${(w / 10).toFixed(w % 10 === 0 ? 0 : 1)}%`)
       .join(' ');
+    const variantOdds = Object.entries(pack.variantChances || {})
+      .map(([v, c]) => `${config.VARIANTS[v].fallbackEmoji} ${(c * 100).toFixed(c * 100 < 1 ? 2 : 1).replace(/\.?0+$/, '')}%`)
+      .join(' · ');
     embed.addFields({
       name: `${pack.emoji} ${pack.name} — ${pack.price} ${config.CURRENCY_EMOJI} (you own ${ownedOf(pack.id)})`,
-      value: `${odds}\nGuaranteed **${RARITIES[pack.pity].name}+** · ✨ foil ${Math.round(pack.foilChance * 100)}%`,
+      value: `${odds}\nGuaranteed **${RARITIES[pack.pity].name}+** · variants: ${variantOdds}`,
     });
   }
 
@@ -165,15 +168,41 @@ async function openScreen(ctx, user, packId) {
   const best = result.cards.reduce((a, b) =>
     rarityKeys.indexOf(b.fruit.rarity) > rarityKeys.indexOf(a.fruit.rarity) ? b : a
   );
+  const bestVariant = result.cards.reduce(
+    (top, c) => Math.max(top, ['normal', 'foil', 'gold', 'prism'].indexOf(c.variant)),
+    0
+  );
+
+  // Make good pulls FEEL good: escalating titles, and epic+ pulls (or shiny
+  // variants) get a loud callout line above the embed.
+  const hypeTitles = {
+    common: `${result.pack.emoji} ${result.pack.name} Opened!`,
+    uncommon: `${result.pack.emoji} ${result.pack.name} Opened!`,
+    rare: `🔵 Nice! A Rare pull!`,
+    epic: `💜 EPIC PULL!`,
+    legendary: `🌟 LEGENDARY PULL!!`,
+    mythic: `🍎 MYTHIC!!! THE RAREST OF THEM ALL!`,
+  };
+  let content = '';
+  const shinyCard = result.cards.find((c) => c.variant !== 'normal');
+  if (['epic', 'legendary', 'mythic'].includes(best.fruit.rarity)) {
+    const bang = { epic: '🎉', legendary: '🎆 🎆', mythic: '🌟🎆🍎🎆🌟' }[best.fruit.rarity];
+    content = `${bang} **${user.displayName}** pulled ${remoji(best.fruit.rarity)} **${best.fruit.name}**${variantLabel(
+      result.cards.find((c) => c.fruit.id === best.fruit.id)?.variant || 'normal'
+    )} — a **${RARITIES[best.fruit.rarity].name.toUpperCase()}**! ${bang}`;
+  } else if (bestVariant >= 1 && shinyCard) {
+    content = `✨ **${user.displayName}** pulled a${variantLabel(shinyCard.variant)} **${shinyCard.fruit.name}**! Shiny!`;
+  }
 
   const embed = new EmbedBuilder()
-    .setColor(RARITIES[best.fruit.rarity].color)
-    .setTitle(`✨ ${result.pack.name} Opened!`)
+    .setColor(bestVariant >= 2 ? 0xffd700 : RARITIES[best.fruit.rarity].color)
+    .setTitle(hypeTitles[best.fruit.rarity])
     .setDescription(lines.join('\n'))
     .setImage('attachment://pack.png')
     .setFooter({ text: `${result.packsLeft} ${result.pack.name}(s) left` });
 
   return {
+    content,
     embeds: [embed],
     files: [new AttachmentBuilder(image, { name: 'pack.png' })],
     components: [
@@ -186,7 +215,7 @@ async function openScreen(ctx, user, packId) {
   };
 }
 
-async function collectionScreen(ctx, user, page) {
+async function collectionScreen(ctx, user, page, note = null) {
   const rows = await ctx.db.getCollectionDetailed(user.id);
   const owned = rows
     .map((r) => ({ fruit: getFruit(r.fruit_id), variant: r.variant, qty: r.quantity }))
@@ -208,10 +237,11 @@ async function collectionScreen(ctx, user, page) {
         )
       : ['*No cards yet — hit the shop and rip some packs!*'];
 
+  const dupes = owned.reduce((s2, o) => s2 + Math.max(0, o.qty - 1), 0);
   const embed = new EmbedBuilder()
     .setColor(0x9b59b6)
     .setTitle(`🃏 ${user.displayName}'s Collection`)
-    .setDescription(lines.join('\n'))
+    .setDescription((note ? `${note}\n\n` : '') + lines.join('\n'))
     .setFooter({ text: `Page ${p}/${pages} · ${distinct}/${FRUITS.length} unique fruits · pick a card below to inspect it` });
 
   const components = [];
@@ -236,6 +266,7 @@ async function collectionScreen(ctx, user, page) {
     new ActionRowBuilder().addComponents(
       btn('col', p - 1, '', user.id, '◀', ButtonStyle.Secondary, null, p <= 1),
       btn('col', p + 1, '', user.id, '▶', ButtonStyle.Secondary, null, p >= pages),
+      btn('selldupes', p, '', user.id, `Sell dupes (${dupes})`, ButtonStyle.Success, '💰', dupes === 0),
       btn('home', '', '', user.id, 'Home', ButtonStyle.Secondary, '🏠')
     )
   );
@@ -243,7 +274,7 @@ async function collectionScreen(ctx, user, page) {
 }
 
 // source: a collection page number, or 'd' when opened from the FruitDex.
-async function cardScreen(ctx, user, fruitId, variant, source) {
+async function cardScreen(ctx, user, fruitId, variant, source, note = null) {
   const fruit = getFruit(fruitId);
   if (!fruit) return collectionScreen(ctx, user, 1);
   const { rows } = await ctx.db.pool.query(
@@ -282,7 +313,7 @@ async function cardScreen(ctx, user, fruitId, variant, source) {
   const embed = new EmbedBuilder()
     .setColor(rarity.color)
     .setTitle(`${remoji(fruit.rarity)} ${fruit.name}${variantLabel(variant)}`)
-    .setDescription(`🧠 *Fun fact: ${fruit.flavor}*`)
+    .setDescription((note ? `${note}\n\n` : '') + `🧠 *Fun fact: ${fruit.flavor}*`)
     .addFields(
       { name: 'Type', value: `${temoji(fruit.type)} ${type.name}`, inline: true },
       { name: 'Rarity', value: rarity.name, inline: true },
@@ -306,6 +337,7 @@ async function cardScreen(ctx, user, fruitId, variant, source) {
     src === 'd'
       ? btn('dex', '', '', user.id, 'FruitDex', ButtonStyle.Secondary, '📖')
       : btn('col', src, '', user.id, 'Collection', ButtonStyle.Secondary, '🃏');
+  const ownedThis = ownedOf(variant);
   return {
     embeds: [embed],
     files: [new AttachmentBuilder(image, { name: 'card.png' })],
@@ -313,6 +345,7 @@ async function cardScreen(ctx, user, fruitId, variant, source) {
       new ActionRowBuilder().addComponents(
         backButton,
         btn('card', fruitId, `${other}|${src}`, user.id, `View ${config.VARIANTS[other]?.name || 'Normal'}`, ButtonStyle.Primary, '✨'),
+        btn('sell1', fruitId, `${variant}|${src}`, user.id, `Sell 1 (+${sellValue(fruit, variant)}🪙)`, ButtonStyle.Success, '💰', ownedThis < 1),
         btn('home', '', '', user.id, 'Home', ButtonStyle.Secondary, '🏠')
       ),
     ],
@@ -501,7 +534,7 @@ async function tutorialScreen(ctx, user, topic = 'basics') {
           `• Pricier packs guarantee rarer cards and roll better ✨ variant chances\n\n` +
           `🌈 **Variants**: cards can drop as ✨ Foil (sell ×4), 🥇 Gold (×10), or 🌈 Prism (×25) — same stats, way cooler card\n` +
           `🆕 marks a fruit you've never pulled before\n` +
-          `💰 Sell spares with \`fsell <fruit> [foil/gold/prism] [n|all]\` — rarer cards and variants sell for more\n` +
+          `💰 Selling is easy: \`fsell dupes\` clears every duplicate (keeps one of each), \`fsell all common\` dumps a whole rarity (shinies stay safe), or use the **Sell dupes** button right in your Collection\n` +
           `📖 Track your completion in the **FruitDex** — inspect any card, even undiscovered ones`
       );
   } else if (topic === 'battle') {
@@ -596,6 +629,28 @@ async function handleComponent(interaction, ctx) {
   } else if (action === 'packs') payload = await packsScreen(ctx, user);
   else if (action === 'open') payload = await openScreen(ctx, user, a);
   else if (action === 'col') payload = await collectionScreen(ctx, user, parseInt(a, 10) || 1);
+  else if (action === 'selldupes') {
+    const result = await economy.sellDuplicates(ctx.db, user.id);
+    payload = await collectionScreen(
+      ctx,
+      user,
+      parseInt(a, 10) || 1,
+      result.cards > 0
+        ? `💰 Sold **${result.cards}** duplicate${result.cards === 1 ? '' : 's'} for ${coins(result.payout)}! Balance: ${coins(result.balance)}`
+        : 'No duplicates to sell!'
+    );
+  } else if (action === 'sell1') {
+    const [variant, src] = (b || 'normal|1').split('|');
+    const result = await economy.sellOne(ctx.db, user.id, a, variant);
+    payload = await cardScreen(
+      ctx,
+      user,
+      a,
+      variant,
+      src === 'd' ? 'd' : parseInt(src, 10) || 1,
+      result.ok ? `💰 Sold one for ${coins(result.payout)} — **${result.left}** left. Balance: ${coins(result.balance)}` : "❌ You don't own that copy!"
+    );
+  }
   else if (action === 'colsel' || action === 'dexsel') {
     const [fruitId, variant, source] = interaction.values[0].split('|');
     payload = await cardScreen(ctx, user, fruitId, variant, source === 'd' ? 'd' : parseInt(source, 10) || 1);
@@ -636,7 +691,7 @@ async function handleComponent(interaction, ctx) {
     payload = await homeScreen(ctx, user);
   }
 
-  await interaction.update({ ...payload, attachments: [] });
+  await interaction.update({ content: payload.content ?? '', ...payload, attachments: [] });
 }
 
 async function handleModal(interaction, ctx) {
@@ -669,7 +724,7 @@ async function handleModal(interaction, ctx) {
 
   const payload = await auctionScreen(ctx, interaction.user, note);
   if (interaction.isFromMessage()) {
-    await interaction.update({ ...payload, attachments: [] });
+    await interaction.update({ content: payload.content ?? '', ...payload, attachments: [] });
   } else {
     await interaction.reply({ ...payload, ephemeral: true });
   }

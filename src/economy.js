@@ -5,7 +5,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
-const { rollPack } = require('./util');
+const { rollPack, sellValue } = require('./util');
+const { getFruit, RARITIES } = require('./fruits');
 
 const CODES_FILE = path.join(__dirname, '..', 'assets', 'listofcodes.json');
 
@@ -107,6 +108,85 @@ async function openPack(db, userId, requestedPack) {
   });
 }
 
+// Sell one copy of a specific card. Returns { ok, payout, left, balance }.
+async function sellOne(db, userId, fruitId, variant) {
+  const fruit = getFruit(fruitId);
+  if (!fruit) return { ok: false };
+  const unit = sellValue(fruit, variant);
+  return db.withPlayerLock(userId, async (client, player) => {
+    const { rows } = await client.query(
+      `SELECT quantity FROM collections WHERE user_id = $1 AND fruit_id = $2 AND variant = $3 FOR UPDATE`,
+      [userId, fruitId, variant]
+    );
+    const have = rows[0]?.quantity || 0;
+    if (have < 1) return { ok: false };
+    await client.query(
+      `UPDATE collections SET quantity = quantity - 1 WHERE user_id = $1 AND fruit_id = $2 AND variant = $3`,
+      [userId, fruitId, variant]
+    );
+    await client.query(`UPDATE players SET balance = balance + $2 WHERE user_id = $1`, [userId, unit]);
+    return { ok: true, payout: unit, left: have - 1, balance: Number(player.balance) + unit };
+  });
+}
+
+// Sell every duplicate, keeping one copy of each fruit+variant.
+// Optional rarity filter ('common', ...). Returns { cards, payout, balance }.
+async function sellDuplicates(db, userId, rarityFilter = null) {
+  return db.withPlayerLock(userId, async (client, player) => {
+    const { rows } = await client.query(
+      `SELECT fruit_id, variant, quantity FROM collections WHERE user_id = $1 AND quantity > 1 FOR UPDATE`,
+      [userId]
+    );
+    let cards = 0;
+    let payout = 0;
+    for (const row of rows) {
+      const fruit = getFruit(row.fruit_id);
+      if (!fruit) continue;
+      if (rarityFilter && fruit.rarity !== rarityFilter) continue;
+      const sellQty = row.quantity - 1;
+      cards += sellQty;
+      payout += sellQty * sellValue(fruit, row.variant);
+      await client.query(
+        `UPDATE collections SET quantity = 1 WHERE user_id = $1 AND fruit_id = $2 AND variant = $3`,
+        [userId, row.fruit_id, row.variant]
+      );
+    }
+    if (payout > 0) {
+      await client.query(`UPDATE players SET balance = balance + $2 WHERE user_id = $1`, [userId, payout]);
+    }
+    return { cards, payout, balance: Number(player.balance) + payout };
+  });
+}
+
+// Sell ALL copies of every fruit of a rarity (normal variant only, so shiny
+// pulls never vanish in a bulk clear). Returns { cards, payout, balance }.
+async function sellRarity(db, userId, rarityKey) {
+  if (!RARITIES[rarityKey]) return { cards: 0, payout: 0 };
+  return db.withPlayerLock(userId, async (client, player) => {
+    const { rows } = await client.query(
+      `SELECT fruit_id, variant, quantity FROM collections
+       WHERE user_id = $1 AND quantity > 0 AND variant = 'normal' FOR UPDATE`,
+      [userId]
+    );
+    let cards = 0;
+    let payout = 0;
+    for (const row of rows) {
+      const fruit = getFruit(row.fruit_id);
+      if (!fruit || fruit.rarity !== rarityKey) continue;
+      cards += row.quantity;
+      payout += row.quantity * sellValue(fruit, 'normal');
+      await client.query(
+        `UPDATE collections SET quantity = 0 WHERE user_id = $1 AND fruit_id = $2 AND variant = 'normal'`,
+        [userId, row.fruit_id]
+      );
+    }
+    if (payout > 0) {
+      await client.query(`UPDATE players SET balance = balance + $2 WHERE user_id = $1`, [userId, payout]);
+    }
+    return { cards, payout, balance: Number(player.balance) + payout };
+  });
+}
+
 // Codes live in assets/listofcodes.json — read fresh on every redeem so a
 // redeploy (or hot edit) is all it takes to ship a new code.
 function loadCodes() {
@@ -159,4 +239,4 @@ async function redeemCode(db, userId, input) {
   });
 }
 
-module.exports = { claimDaily, claimDrop, buyPacks, openPack, redeemCode };
+module.exports = { claimDaily, claimDrop, buyPacks, openPack, redeemCode, sellOne, sellDuplicates, sellRarity };

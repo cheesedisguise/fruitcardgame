@@ -242,6 +242,7 @@ class BattleManager {
     battle.phase = 'pick';
     for (const uid of battle.order) {
       const rows = await this.db.getCollection(uid);
+      battle.players[uid].draft = [];
       battle.pickOptions[uid] = rows
         .map((r) => ({ fruit: getFruit(r.fruit_id), qty: r.quantity }))
         .filter((o) => o.fruit)
@@ -249,10 +250,10 @@ class BattleManager {
           const ra = RARITY_ORDER.indexOf(a.fruit.rarity) - RARITY_ORDER.indexOf(b.fruit.rarity);
           return ra !== 0 ? ra : b.fruit.atk - a.fruit.atk;
         })
-        .slice(0, 25)
         .map((o) => {
           const type = TYPES[o.fruit.type];
           return {
+            cost: config.RARITY_COST[o.fruit.rarity],
             label: `${o.fruit.name} (${config.RARITY_COST[o.fruit.rarity]}pt) — ATK ${o.fruit.atk} · HP ${o.fruit.hp}`,
             description: `${RARITIES[o.fruit.rarity].name} · ${type.emoji} ${type.name} · ${movesFor(o.fruit).signature.name}`,
             value: o.fruit.id,
@@ -271,46 +272,85 @@ class BattleManager {
     this.setTimer(battle, config.PICK_TIMEOUT_MS, () => this.handlePickTimeout(battle));
   }
 
+  draftCost(battle, uid) {
+    return (battle.players[uid].draft || []).reduce(
+      (sum, fid) => sum + config.RARITY_COST[getFruit(fid).rarity],
+      0
+    );
+  }
+
   pickEmbed(battle) {
     const lines = battle.order.map((uid) => {
       const p = battle.players[uid];
-      return p.team.length > 0
-        ? `✅ **${p.user.displayName}** locked in a team of ${p.team.length}!`
-        : `⏳ **${p.user.displayName}** is drafting...`;
+      if (p.team.length > 0) return `✅ **${p.user.displayName}** locked in a team of ${p.team.length}!`;
+      const picks = (p.draft || []).map((fid) => {
+        const f = getFruit(fid);
+        return `${remoji(f.rarity)} ${f.name} (${config.RARITY_COST[f.rarity]}pt)`;
+      });
+      return (
+        `🃏 **${p.user.displayName}** — budget **${this.draftCost(battle, uid)}/${config.TEAM_POINTS}pt**\n` +
+        (picks.length > 0 ? `> ${picks.join(' · ')}` : '> *nothing drafted yet*')
+      );
     });
     return new EmbedBuilder()
       .setColor(0xf39c12)
       .setTitle('🃏 Draft Your Team!')
       .setDescription(
-        lines.join('\n') +
-          `\n\nPick **up to ${config.TEAM_SIZE} fruits** within the **${config.TEAM_POINTS}-point budget** ` +
-          `(cost by rarity: ${Object.entries(config.RARITY_COST)
+        lines.join('\n\n') +
+          `\n\nPick fruits **one at a time** from the menus (up to ${config.TEAM_SIZE}, within **${config.TEAM_POINTS} points**), then hit **Lock In**!\n` +
+          `Cost by rarity: ${Object.entries(config.RARITY_COST)
             .map(([r, c]) => `${RARITIES[r].name} ${c}`)
-            .join(' · ')}).\n` +
-          `The first pick is your opener; the rest wait on the bench.\n` +
-          `⚡ 1 energy per turn — quick attacks/Guard/Retreat cost 1, signature moves 2-4, Charge banks +1. Weaker teams start with bonus energy!`
+            .join(' · ')}. Your first pick is your opener.`
       )
-      .setFooter({ text: 'Draft from the menu below · 3 minutes' });
+      .setFooter({ text: 'Big cards hit harder — but a full bench wins long fights · 3 minutes' });
   }
 
   pickComponents(battle, view) {
     const rows = [];
+    const buttons = [];
     for (const uid of view.localIds) {
       const p = battle.players[uid];
       if (p.team.length > 0) continue;
-      const options = battle.pickOptions[uid];
-      rows.push(
-        new ActionRowBuilder().addComponents(
-          new StringSelectMenuBuilder()
-            .setCustomId(`battle:${battle.id}:pick:${uid}`)
-            .setPlaceholder(`${p.user.displayName} — draft up to ${config.TEAM_SIZE} (${config.TEAM_POINTS}pt budget)!`)
-            .setMinValues(1)
-            .setMaxValues(Math.min(config.TEAM_SIZE, options.length))
-            .addOptions(options)
-        )
+      const heavy = battle.pickOptions[uid].filter((o) => o.cost >= 3).slice(0, 25);
+      const budget = battle.pickOptions[uid].filter((o) => o.cost <= 2).slice(0, 25);
+      const short = view.localIds.length === 1;
+      if (heavy.length > 0) {
+        rows.push(
+          new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId(`battle:${battle.id}:padd:${uid}h`)
+              .setPlaceholder(`${short ? '' : p.user.displayName + ' — '}💪 Heavy hitters (3-6pt)`)
+              .addOptions(heavy.map(({ cost, ...o }) => o))
+          )
+        );
+      }
+      if (budget.length > 0) {
+        rows.push(
+          new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId(`battle:${battle.id}:padd:${uid}b`)
+              .setPlaceholder(`${short ? '' : p.user.displayName + ' — '}🪙 Budget picks (1-2pt)`)
+              .addOptions(budget.map(({ cost, ...o }) => o))
+          )
+        );
+      }
+      buttons.push(
+        new ButtonBuilder()
+          .setCustomId(`battle:${battle.id}:plock:${uid}`)
+          .setLabel(`${view.localIds.length === 1 ? 'Lock In' : p.user.displayName + ': Lock'} (${this.draftCost(battle, uid)}pt)`)
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('✅')
+          .setDisabled((p.draft || []).length === 0),
+        new ButtonBuilder()
+          .setCustomId(`battle:${battle.id}:pclear:${uid}`)
+          .setLabel(view.localIds.length === 1 ? 'Clear' : `${p.user.displayName}: Clear`)
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('↩️')
+          .setDisabled((p.draft || []).length === 0)
       );
     }
-    return rows;
+    if (buttons.length > 0) rows.push(new ActionRowBuilder().addComponents(buttons.slice(0, 5)));
+    return rows.slice(0, 5);
   }
 
   // ── Fight rendering ──────────────────────────────────────────────
@@ -324,6 +364,15 @@ class BattleManager {
   }
 
   // ── Arena events (roll every few rounds, last one round) ─────────
+
+  static CROWD = [
+    'The crowd goes bananas! 🍌',
+    'Juice flies everywhere! 🧃',
+    'The orchard holds its breath...',
+    'Seeds rattle in the stands!',
+    'A vendor drops their fruit cup! 🥤',
+    'Somewhere, a melon thumps approvingly.',
+  ];
 
   static EVENTS = [
     { id: 'storm', text: '🌧 **Juice Storm** — all damage +30% this round!', dmgMult: 1.3 },
@@ -347,6 +396,14 @@ class BattleManager {
         (p.atkBonus > 0 ? `  ${gemoji('ripen', '📈')}+${p.atkBonus}` : '') +
         (p.fired ? '  🔥**FIRED UP!**' : p.momentum > 0 ? `  🔥${'▮'.repeat(p.momentum)}${'▯'.repeat(config.CLASH.MOMENTUM_MAX - p.momentum)}` : ''),
     ];
+    if (battle.phase === 'fight') {
+      const moves = movesFor(mon.fruit);
+      const atk = mon.fruit.atk + p.atkBonus;
+      const scaled = round5((moves.quick.dmg / mon.fruit.atk) * atk);
+      lines.push(
+        `> ⚔️ ${moves.quick.name} ${scaled}·${moves.quick.cost}⚡ · ${moves.signature.emoji} ${moves.signature.name} ·${moves.signature.cost}⚡`
+      );
+    }
     const bench = p.team
       .map((m, i) => ({ m, i }))
       .filter(({ i }) => i !== p.active);
@@ -489,7 +546,9 @@ class BattleManager {
     }
     try {
       if (action === 'accept' || action === 'decline') await this.handleInvite(interaction, battle, action);
-      else if (action === 'pick') await this.handlePick(interaction, battle, extra);
+      else if (action === 'padd') await this.handleDraftAdd(interaction, battle, extra);
+      else if (action === 'plock') await this.handleDraftLock(interaction, battle, extra);
+      else if (action === 'pclear') await this.handleDraftClear(interaction, battle, extra);
       else if (action === 'act') await this.handleAction(interaction, battle, extra);
       else if (action === 'rtgt') await this.handleRetreatTarget(interaction, battle, parseInt(extra, 10));
       else await interaction.deferUpdate().catch(() => {});
@@ -538,36 +597,61 @@ class BattleManager {
     return team.reduce((s, m) => s + m.fruit.atk + m.fruit.hp / 2, 0);
   }
 
-  async handlePick(interaction, battle, forUserId) {
+  async handleDraftAdd(interaction, battle, extra) {
     if (battle.phase !== 'pick') return interaction.deferUpdate();
-    if (interaction.user.id !== forUserId) {
+    const uid = extra.slice(0, -1); // trailing h/b marks which menu
+    if (interaction.user.id !== uid) {
       return interaction.reply({ content: "That's your opponent's draft menu!", ephemeral: true });
     }
-    const player = battle.players[forUserId];
-    if (player.team.length > 0) return interaction.deferUpdate();
-
-    // Budget check — rarity has a cost, so a mythic squad can't stomp for free.
-    const picks = interaction.values.map((fid) => getFruit(fid));
-    const cost = picks.reduce((s, f) => s + (config.RARITY_COST[f.rarity] || 1), 0);
+    const p = battle.players[uid];
+    if (!p || p.team.length > 0) return interaction.deferUpdate();
+    p.draft = p.draft || [];
+    const fruit = getFruit(interaction.values[0]);
+    if (!fruit) return interaction.deferUpdate();
+    if (p.draft.includes(fruit.id)) {
+      return interaction.reply({ content: `❌ ${fruit.name} is already on your team!`, ephemeral: true });
+    }
+    if (p.draft.length >= config.TEAM_SIZE) {
+      return interaction.reply({ content: `❌ Team is full (${config.TEAM_SIZE})! Clear or lock in.`, ephemeral: true });
+    }
+    const cost = this.draftCost(battle, uid) + config.RARITY_COST[fruit.rarity];
     if (cost > config.TEAM_POINTS) {
       return interaction.reply({
-        content:
-          `❌ That team costs **${cost} points** — the budget is **${config.TEAM_POINTS}**!\n` +
-          picks.map((f) => `• ${f.name}: ${config.RARITY_COST[f.rarity]}pt`).join('\n') +
-          '\nDrop something and draft again.',
+        content: `❌ ${fruit.name} costs ${config.RARITY_COST[fruit.rarity]}pt — that would put you at **${cost}/${config.TEAM_POINTS}**. Pick something cheaper or clear!`,
         ephemeral: true,
       });
     }
+    p.draft.push(fruit.id);
+    await interaction.deferUpdate();
+    await this.renderAllViews(battle);
+  }
 
-    player.team = picks.map((fruit) => ({ fruit, hp: fruit.hp, maxHp: fruit.hp }));
-    player.active = 0;
+  async handleDraftClear(interaction, battle, uid) {
+    if (battle.phase !== 'pick' || interaction.user.id !== uid) return interaction.deferUpdate();
+    const p = battle.players[uid];
+    if (!p || p.team.length > 0) return interaction.deferUpdate();
+    p.draft = [];
+    await interaction.deferUpdate();
+    await this.renderAllViews(battle);
+  }
+
+  async handleDraftLock(interaction, battle, uid) {
+    if (battle.phase !== 'pick' || interaction.user.id !== uid) return interaction.deferUpdate();
+    const p = battle.players[uid];
+    if (!p || p.team.length > 0 || !(p.draft || []).length) return interaction.deferUpdate();
+    p.team = p.draft.map((fid) => {
+      const fruit = getFruit(fid);
+      return { fruit, hp: fruit.hp, maxHp: fruit.hp };
+    });
+    p.active = 0;
     await interaction.deferUpdate();
 
-    const bothPicked = Object.values(battle.players).every((p) => p.team.length > 0);
-    if (!bothPicked) {
-      return this.renderAllViews(battle);
-    }
+    const bothPicked = Object.values(battle.players).every((pl) => pl.team.length > 0);
+    if (!bothPicked) return this.renderAllViews(battle);
+    await this.startFight(battle);
+  }
 
+  async startFight(battle) {
     // Underdog boost: the weaker team banks bonus starting energy.
     const [a, b] = battle.order.map((uid) => battle.players[uid]);
     const [scoreA, scoreB] = [this.teamScore(a.team), this.teamScore(b.team)];
@@ -578,7 +662,6 @@ class BattleManager {
       weaker.power += boost;
       battle.log.push(`🐢 Underdog boost: **${weaker.user.displayName}** starts with **+${boost}⚡**!`);
     }
-
     battle.phase = 'fight';
     battle.log.push('⚔️ **The clash begins!** Both players choose secretly each round — reveals happen together!');
     await this.beginRound(battle);
@@ -618,6 +701,7 @@ class BattleManager {
   }
 
   async beginRound(battle) {
+    battle.resolving = false;
     battle.round += 1;
     battle.choices = {};
     battle.event = null;
@@ -636,7 +720,7 @@ class BattleManager {
 
   // A player pressing an action button during the choosing phase.
   async handleAction(interaction, battle, verb) {
-    if (battle.phase !== 'fight') return interaction.deferUpdate();
+    if (battle.phase !== 'fight' || battle.resolving) return interaction.deferUpdate();
     const uid = interaction.user.id;
     const p = battle.players[uid];
     if (!p) return interaction.reply({ content: "You're not in this battle!", ephemeral: true });
@@ -690,6 +774,7 @@ class BattleManager {
   }
 
   async afterChoice(battle) {
+    if (battle.resolving || battle.phase !== 'fight') return;
     const bothIn = battle.order.every((uid) => battle.choices[uid]);
     if (bothIn) {
       await this.resolveRound(battle);
@@ -797,6 +882,8 @@ class BattleManager {
   }
 
   async resolveRound(battle) {
+    if (battle.resolving || battle.phase !== 'fight') return; // double-click / timeout race guard
+    battle.resolving = true;
     if (battle.timer) clearTimeout(battle.timer);
     const [ua, ub] = battle.order;
     const A = battle.players[ua];
@@ -805,6 +892,9 @@ class BattleManager {
     battle.log.push(
       `— **Round ${battle.round}** — ${A.user.displayName} ${verbIcon[battle.choices[ua].verb]} vs ${B.user.displayName} ${verbIcon[battle.choices[ub].verb]}`
     );
+    if (crypto.randomInt(4) === 0) {
+      battle.log.push(`*${BattleManager.CROWD[crypto.randomInt(BattleManager.CROWD.length)]}*`);
+    }
 
     // Retreats swap first (the incoming fruit faces whatever is coming).
     for (const uid of battle.order) {
@@ -913,7 +1003,20 @@ class BattleManager {
 
   async handlePickTimeout(battle) {
     if (battle.phase !== 'pick') return;
+    // Players with a draft in progress get it auto-locked.
+    for (const uid of battle.order) {
+      const p = battle.players[uid];
+      if (p.team.length === 0 && (p.draft || []).length > 0) {
+        p.team = p.draft.map((fid) => {
+          const fruit = getFruit(fid);
+          return { fruit, hp: fruit.hp, maxHp: fruit.hp };
+        });
+        p.active = 0;
+        battle.log.push(`⏰ **${p.user.displayName}**'s draft auto-locked!`);
+      }
+    }
     const picked = Object.values(battle.players).filter((p) => p.team.length > 0);
+    if (picked.length === 2) return this.startFight(battle);
     if (picked.length === 1) {
       const loser = Object.values(battle.players).find((p) => p.team.length === 0);
       await this.finish(battle, picked[0], loser, `⏰ **${loser.user.displayName}** never drafted a team — forfeit!`);
@@ -924,7 +1027,7 @@ class BattleManager {
 
   // Slowpokes auto-Guard so the round always resolves.
   async handleRoundTimeout(battle) {
-    if (battle.phase !== 'fight') return;
+    if (battle.phase !== 'fight' || battle.resolving) return;
     let filled = false;
     for (const uid of battle.order) {
       if (!battle.choices[uid]) {
