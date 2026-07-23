@@ -3,7 +3,7 @@
 // from every server the bot is in.
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
-const { findFruit, coins, sellValue, variantLabel, remoji } = require('../util');
+const { findFruit, coins, sellValue, variantLabel, remoji, extractVariant } = require('../util');
 const { getFruit } = require('../fruits');
 
 function describeAuction(a) {
@@ -62,15 +62,10 @@ module.exports = {
 
     // fauction <fruit> [foil] [minBid] — create a listing
     const rest = [...args];
-    let variant = 'normal';
     let minBid = null;
     const last = rest[rest.length - 1]?.toLowerCase();
     if (/^\d+$/.test(last)) minBid = parseInt(rest.pop(), 10);
-    const foilIdx = rest.findIndex((t) => t.toLowerCase() === 'foil');
-    if (foilIdx !== -1) {
-      variant = 'foil';
-      rest.splice(foilIdx, 1);
-    }
+    const variant = extractVariant(rest);
     const fruit = findFruit(rest.join(' '));
     if (!fruit) return message.reply(`❓ No fruit matches "${rest.join(' ')}".`);
     if (!minBid) minBid = sellValue(fruit, variant);

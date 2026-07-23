@@ -50,8 +50,9 @@ client.on(Events.MessageCreate, async (message) => {
   if (onCooldown(message.author.id)) return;
 
   try {
-    // Every command implies an account — make sure the row exists.
-    await db.getPlayer(message.author.id);
+    // Every command implies an account — except fhelp, which greets brand-new
+    // players with a pointer to fstart instead.
+    if (command.name !== 'fhelp') await db.getPlayer(message.author.id);
     await command.execute(message, args, ctx);
   } catch (err) {
     console.error(`Error in ${command.name}:`, err);

@@ -21,21 +21,15 @@ const {
   ChannelType,
 } = require('discord.js');
 const config = require('./config');
-const { getFruit, RARITIES } = require('./fruits');
+const { getFruit, RARITIES, TYPES, ABILITIES, movesFor } = require('./fruits');
 const { remoji } = require('./util');
 
 const RARITY_ORDER = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
 const THREAD_DELETE_DELAY_MS = 20 * 1000;
 
-// Ability archetypes referenced by fruit.ability in the catalog.
-const ABILITIES = {
-  smash: { name: 'Smash', emoji: '💥', desc: 'A crushing blow for 1.8× ATK' },
-  regrow: { name: 'Regrow', emoji: '💚', desc: 'Heal 45% of max HP' },
-  pierce: { name: 'Pierce', emoji: '🗡️', desc: '1.2× ATK that ignores shields' },
-  drain: { name: 'Drain', emoji: '🧛', desc: '0.9× ATK, heal half the damage dealt' },
-  flurry: { name: 'Flurry', emoji: '🌪️', desc: 'Two rapid hits of 0.75× ATK' },
-  ripen: { name: 'Ripen', emoji: '📈', desc: 'Your team gains +5 ATK for the battle' },
-};
+function round5(n) {
+  return Math.max(5, Math.round(n / 5) * 5);
+}
 
 function hpBar(current, max, len = 8) {
   const pct = current / max;
@@ -256,10 +250,10 @@ class BattleManager {
         })
         .slice(0, 25)
         .map((o) => {
-          const ab = ABILITIES[o.fruit.ability];
+          const type = TYPES[o.fruit.type];
           return {
             label: `${o.fruit.name} — ATK ${o.fruit.atk} · HP ${o.fruit.hp}`,
-            description: `${RARITIES[o.fruit.rarity].name} · ${ab.emoji} ${ab.name}`,
+            description: `${RARITIES[o.fruit.rarity].name} · ${type.emoji} ${type.name} · ${movesFor(o.fruit).signature.name}`,
             value: o.fruit.id,
             emoji: remoji(o.fruit.rarity),
           };
@@ -328,10 +322,10 @@ class BattleManager {
   playerBlock(battle, uid) {
     const p = battle.players[uid];
     const mon = this.activeMon(p);
-    const ab = ABILITIES[mon.fruit.ability];
+    const type = TYPES[mon.fruit.type];
     const turnMark = battle.phase === 'fight' && battle.turn === uid ? ' ⬅️' : '';
     const lines = [
-      `${remoji(mon.fruit.rarity)} **${p.user.displayName}** — *${mon.fruit.name}* (${ab.emoji} ${ab.name})${turnMark}`,
+      `${remoji(mon.fruit.rarity)} **${p.user.displayName}** — *${mon.fruit.name}* ${type.emoji}${turnMark}`,
       `${hpBar(mon.hp, mon.maxHp)} **${mon.hp}**/${mon.maxHp}` +
         `  ⚡${p.power}` +
         (p.shield > 0 ? `  🛡️${p.shield}` : '') +
@@ -429,36 +423,46 @@ class BattleManager {
 
     const p = turnPlayer;
     const mon = this.activeMon(p);
-    const ab = ABILITIES[mon.fruit.ability];
+    const moves = movesFor(mon.fruit);
+    const atk = mon.fruit.atk + p.atkBonus;
     const benchAlive = p.team.some((m, i) => i !== p.active && m.hp > 0);
+    const sig = moves.signature;
+    const sigInfo =
+      sig.dmg != null
+        ? `${round5((sig.dmg / mon.fruit.atk) * atk)}${sig.kind === 'flurry' ? '/heads' : ''}`
+        : sig.heal != null
+          ? `heal ${sig.heal}`
+          : `+${sig.buff} ATK`;
     return [
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-          .setCustomId(`battle:${battle.id}:act:attack`)
-          .setLabel('Attack ·1⚡')
+          .setCustomId(`battle:${battle.id}:act:quick`)
+          .setLabel(`${moves.quick.name} ${round5(0.7 * atk)} ·1⚡`)
           .setStyle(ButtonStyle.Danger)
           .setEmoji('⚔️')
           .setDisabled(p.power < 1),
         new ButtonBuilder()
-          .setCustomId(`battle:${battle.id}:act:block`)
-          .setLabel('Block ·1⚡')
+          .setCustomId(`battle:${battle.id}:act:sig`)
+          .setLabel(`${sig.name} ${sigInfo} ·${config.ABILITY_COST}⚡`)
+          .setStyle(ButtonStyle.Success)
+          .setEmoji(sig.emoji)
+          .setDisabled(p.power < config.ABILITY_COST),
+        new ButtonBuilder()
+          .setCustomId(`battle:${battle.id}:act:guard`)
+          .setLabel(`Guard +${round5(atk * config.BLOCK_SHIELD_RATIO)}🛡 ·1⚡`)
           .setStyle(ButtonStyle.Primary)
           .setEmoji('🛡️')
-          .setDisabled(p.power < 1),
-        new ButtonBuilder()
-          .setCustomId(`battle:${battle.id}:act:ability`)
-          .setLabel(`${ab.name} ·${config.ABILITY_COST}⚡`)
-          .setStyle(ButtonStyle.Success)
-          .setEmoji(ab.emoji)
-          .setDisabled(p.power < config.ABILITY_COST),
+          .setDisabled(p.power < 1)
+      ),
+      new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`battle:${battle.id}:act:charge`)
           .setLabel('Charge +1⚡')
           .setStyle(ButtonStyle.Secondary)
           .setEmoji('⚡'),
         new ButtonBuilder()
-          .setCustomId(`battle:${battle.id}:act:switch`)
-          .setLabel('Switch ·1⚡')
+          .setCustomId(`battle:${battle.id}:act:retreat`)
+          .setLabel('Retreat ·1⚡')
           .setStyle(ButtonStyle.Secondary)
           .setEmoji('🔄')
           .setDisabled(p.power < 1 || !benchAlive)
@@ -588,17 +592,23 @@ class BattleManager {
     this.setTimer(battle, config.TURN_TIMEOUT_MS, () => this.handleTurnTimeout(battle));
   }
 
-  rollDamage(base) {
-    const variance = 1 - config.DAMAGE_VARIANCE + (crypto.randomInt(1001) / 1000) * config.DAMAGE_VARIANCE * 2;
-    const crit = crypto.randomInt(100) < config.CRIT_CHANCE * 100;
-    const dmg = Math.max(1, Math.round(base * variance * (crit ? config.CRIT_MULTIPLIER : 1)));
-    return { dmg, crit };
-  }
-
-  // Apply damage to the defender (shield soaks first unless piercing).
-  // Returns a description fragment.
-  dealDamage(battle, defenderId, dmg, { pierce = false } = {}) {
+  // Type-adjusted deterministic damage, Pokémon-TCG style: weakness ×1.5,
+  // resistance ×0.75, rounded to 5s. Pierce ignores both type and shields.
+  dealDamage(battle, attackerId, defenderId, base, { pierce = false } = {}) {
     const d = battle.players[defenderId];
+    const atkType = this.activeMon(battle.players[attackerId]).fruit.type;
+    const defType = TYPES[this.activeMon(d).fruit.type];
+    let dmg = base;
+    let note = '';
+    if (!pierce) {
+      if (defType.weakTo === atkType) {
+        dmg = round5(dmg * 1.5);
+        note = " — it's super effective! ⤴️";
+      } else if (defType.resists === atkType) {
+        dmg = round5(dmg * 0.75);
+        note = ' — resisted ⤵️';
+      }
+    }
     let absorbed = 0;
     if (!pierce && d.shield > 0) {
       absorbed = Math.min(d.shield, dmg);
@@ -607,7 +617,7 @@ class BattleManager {
     }
     const mon = this.activeMon(d);
     mon.hp = Math.max(0, mon.hp - dmg);
-    return { dealt: dmg, absorbed, fainted: mon.hp === 0 };
+    return { dealt: dmg, absorbed, note, fainted: mon.hp === 0 };
   }
 
   async handleAction(interaction, battle, verb) {
@@ -616,78 +626,78 @@ class BattleManager {
       return interaction.reply({ content: "It's not your turn!", ephemeral: true });
     }
     const p = battle.players[battle.turn];
+    const attackerId = battle.turn;
     const defenderId = battle.order.find((uid) => uid !== battle.turn);
     const mon = this.activeMon(p);
     const atk = this.effectiveAtk(p);
-    let endTurn = true;
+    const moves = movesFor(mon.fruit);
 
-    if (verb === 'attack') {
+    if (verb === 'quick') {
       if (p.power < 1) return interaction.deferUpdate();
       p.power -= 1;
-      const { dmg, crit } = this.rollDamage(atk);
-      const res = this.dealDamage(battle, defenderId, dmg);
+      const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 0.7));
       battle.log.push(
-        `${crit ? '💥 **CRIT!**' : '⚔️'} **${mon.fruit.name}** hits for **${res.dealt}**` +
-          (res.absorbed > 0 ? ` (🛡️ blocked ${res.absorbed})` : '') + '!'
+        `⚔️ **${mon.fruit.name}** uses **${moves.quick.name}** — **${res.dealt}** damage${res.note}` +
+          (res.absorbed > 0 ? ` (🛡️ ${res.absorbed} blocked)` : '') + '!'
       );
-    } else if (verb === 'block') {
+    } else if (verb === 'guard') {
       if (p.power < 1) return interaction.deferUpdate();
       p.power -= 1;
-      const gained = Math.max(1, Math.round(atk * config.BLOCK_SHIELD_RATIO));
+      const gained = round5(atk * config.BLOCK_SHIELD_RATIO);
       p.shield += gained;
-      battle.log.push(`🛡️ **${mon.fruit.name}** braces — +${gained} shield (${p.shield} total)!`);
+      battle.log.push(`🛡️ **${mon.fruit.name}** guards — +${gained} shield (${p.shield} total)!`);
     } else if (verb === 'charge') {
       p.power = Math.min(config.POWER_CAP, p.power + 1);
-      battle.log.push(`⚡ **${mon.fruit.name}** charges up! (${p.power}⚡ banked)`);
-    } else if (verb === 'switch') {
+      battle.log.push(`⚡ **${mon.fruit.name}** charges energy! (${p.power}⚡ banked)`);
+    } else if (verb === 'retreat') {
       if (p.power < 1) return interaction.deferUpdate();
       battle.switching = battle.turn;
       await interaction.deferUpdate();
       return this.renderAllViews(battle); // show bench choices, turn continues
-    } else if (verb === 'ability') {
+    } else if (verb === 'sig') {
       if (p.power < config.ABILITY_COST) return interaction.deferUpdate();
       p.power -= config.ABILITY_COST;
       const kind = mon.fruit.ability;
-      const ab = ABILITIES[kind];
+      const name = `**${moves.signature.name}**`;
       if (kind === 'smash') {
-        const { dmg, crit } = this.rollDamage(atk * 1.8);
-        const res = this.dealDamage(battle, defenderId, dmg);
-        battle.log.push(`${ab.emoji} **${mon.fruit.name}** uses ${ab.name}${crit ? ' — **CRIT!**' : ''} — **${res.dealt}** damage!`);
+        const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 1.8));
+        battle.log.push(`💥 **${mon.fruit.name}** uses ${name} — **${res.dealt}** damage${res.note}!`);
       } else if (kind === 'regrow') {
-        const heal = Math.round(mon.maxHp * 0.45);
+        const heal = round5(mon.maxHp * 0.5);
         mon.hp = Math.min(mon.maxHp, mon.hp + heal);
-        battle.log.push(`${ab.emoji} **${mon.fruit.name}** uses ${ab.name} — restores **${heal}** HP!`);
+        battle.log.push(`💚 **${mon.fruit.name}** uses ${name} — restores **${heal}** HP!`);
       } else if (kind === 'pierce') {
-        const { dmg, crit } = this.rollDamage(atk * 1.2);
-        const res = this.dealDamage(battle, defenderId, dmg, { pierce: true });
-        battle.log.push(`${ab.emoji} **${mon.fruit.name}** uses ${ab.name}${crit ? ' — **CRIT!**' : ''} — **${res.dealt}** damage, straight through the shield!`);
+        const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 1.2), { pierce: true });
+        battle.log.push(`🗡️ **${mon.fruit.name}** uses ${name} — **${res.dealt}** piercing damage, straight through!`);
       } else if (kind === 'drain') {
-        const { dmg, crit } = this.rollDamage(atk * 0.9);
-        const res = this.dealDamage(battle, defenderId, dmg);
+        const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 0.9));
         const heal = Math.round(res.dealt / 2);
         mon.hp = Math.min(mon.maxHp, mon.hp + heal);
-        battle.log.push(`${ab.emoji} **${mon.fruit.name}** uses ${ab.name}${crit ? ' — **CRIT!**' : ''} — **${res.dealt}** damage, drinks back **${heal}** HP!`);
+        battle.log.push(`🧛 **${mon.fruit.name}** uses ${name} — **${res.dealt}** damage${res.note}, drinks back **${heal}** HP!`);
       } else if (kind === 'flurry') {
+        const flips = [crypto.randomInt(2) === 0, crypto.randomInt(2) === 0];
+        const heads = flips.filter(Boolean).length;
         let total = 0;
-        let crits = 0;
-        for (let i = 0; i < 2; i++) {
-          const { dmg, crit } = this.rollDamage(atk * 0.75);
-          const res = this.dealDamage(battle, defenderId, dmg);
+        for (let i = 0; i < heads; i++) {
+          const res = this.dealDamage(battle, attackerId, defenderId, round5(atk * 0.9));
           total += res.dealt;
-          if (crit) crits++;
           if (res.fainted) break;
         }
-        battle.log.push(`${ab.emoji} **${mon.fruit.name}** uses ${ab.name}${crits ? ` — ${crits} CRIT${crits > 1 ? 'S' : ''}!` : ''} — two hits for **${total}**!`);
+        const flipText = flips.map((f) => (f ? 'Heads' : 'Tails')).join(', ');
+        battle.log.push(
+          `🪙 **${mon.fruit.name}** uses ${name} — flips: *${flipText}* — ` +
+            (heads > 0 ? `**${total}** damage over ${heads} hit${heads > 1 ? 's' : ''}!` : 'a total whiff!')
+        );
       } else if (kind === 'ripen') {
-        p.atkBonus += 5;
-        battle.log.push(`${ab.emoji} **${mon.fruit.name}** uses ${ab.name} — the team gains **+5 ATK** (now +${p.atkBonus})!`);
+        p.atkBonus += 10;
+        battle.log.push(`📈 **${mon.fruit.name}** uses ${name} — the team gains **+10 ATK** (now +${p.atkBonus})!`);
       }
     } else {
       return interaction.deferUpdate();
     }
 
     await interaction.deferUpdate();
-    if (endTurn) await this.endTurn(battle, defenderId);
+    await this.endTurn(battle, defenderId);
   }
 
   async handleSwitchTo(interaction, battle, idx) {

@@ -1,24 +1,19 @@
-const { findFruit, coins, sellValue, variantLabel } = require('../util');
+const { findFruit, coins, sellValue, variantLabel, extractVariant } = require('../util');
 
 module.exports = {
   name: 'fsell',
   aliases: [],
-  description: 'Sell cards for coins (foils are worth 4×)',
-  usage: 'fsell <fruit> [foil] [amount|all]',
+  description: 'Sell cards for coins (variants are worth more!)',
+  usage: 'fsell <fruit> [foil/gold/prism] [amount|all]',
   async execute(message, args, ctx) {
     if (args.length === 0) return message.reply('Sell what? Try `fsell apple 2`, `fsell apple all`, or `fsell apple foil`');
 
     const rest = [...args];
     let qtyArg = null;
-    let variant = 'normal';
-    // qty may be the last token; 'foil' can appear anywhere after the name
+    // qty may be the last token; a variant token can appear anywhere after the name
     const last = rest[rest.length - 1]?.toLowerCase();
     if (/^\d+$/.test(last) || last === 'all') qtyArg = rest.pop().toLowerCase();
-    const foilIdx = rest.findIndex((t) => t.toLowerCase() === 'foil');
-    if (foilIdx !== -1) {
-      variant = 'foil';
-      rest.splice(foilIdx, 1);
-    }
+    const variant = extractVariant(rest);
 
     const fruit = findFruit(rest.join(' '));
     if (!fruit) return message.reply(`❓ No fruit matches "${rest.join(' ')}".`);

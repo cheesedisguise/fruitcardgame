@@ -17,9 +17,8 @@ const {
 } = require('discord.js');
 const config = require('./config');
 const economy = require('./economy');
-const { FRUITS, RARITIES, getFruit } = require('./fruits');
-const { ABILITIES } = require('./battle');
-const { coins, remoji, sortByRarity, sellValue, variantLabel, timeUntil } = require('./util');
+const { FRUITS, RARITIES, TYPES, getFruit, movesFor } = require('./fruits');
+const { coins, remoji, temoji, sortByRarity, sellValue, variantLabel, timeUntil } = require('./util');
 
 const BRAND_COLOR = 0x66bb6a;
 const PAGE_SIZE = 10;
@@ -75,7 +74,8 @@ async function homeScreen(ctx, user) {
         btn('shop', '', '', user.id, 'Shop', ButtonStyle.Success, '🏪'),
         btn('packs', '', '', user.id, 'Open Packs', ButtonStyle.Primary, '📦'),
         btn('col', '1', '', user.id, 'Collection', ButtonStyle.Primary, '🃏'),
-        btn('auc', '', '', user.id, 'Auctions', ButtonStyle.Secondary, '🏛️')
+        btn('auc', '', '', user.id, 'Auctions', ButtonStyle.Secondary, '🏛️'),
+        btn('tut', 'basics', '', user.id, 'Tutorial', ButtonStyle.Secondary, '🎓')
       ),
       new ActionRowBuilder().addComponents(
         btn('daily', '', '', user.id, 'Daily', ButtonStyle.Secondary, '🪙'),
@@ -250,27 +250,45 @@ async function cardScreen(ctx, user, fruitId, variant, source) {
     `SELECT variant, quantity FROM collections WHERE user_id = $1 AND fruit_id = $2 AND quantity > 0`,
     [user.id, fruit.id]
   );
-  const normalOwned = rows.find((r) => r.variant === 'normal')?.quantity || 0;
-  const foilOwned = rows.find((r) => r.variant === 'foil')?.quantity || 0;
+  const ownedOf = (v) => rows.find((r) => r.variant === v)?.quantity || 0;
   const rarity = RARITIES[fruit.rarity];
-  const ability = ABILITIES[fruit.ability];
+  const type = TYPES[fruit.type];
+  const moves = movesFor(fruit);
+  const sig = moves.signature;
   const image = await ctx.render.renderCard(fruit.id, variant);
+
+  const sigEffect =
+    sig.dmg != null
+      ? `${sig.dmg} damage${sig.kind === 'flurry' ? ' per heads (flip 2 coins)' : sig.kind === 'pierce' ? ', ignores shields & types' : sig.kind === 'drain' ? ', heals half back' : ''}`
+      : sig.heal != null
+        ? `heal ${sig.heal} HP`
+        : `+${sig.buff} team ATK`;
+  const ownedText = ['normal', 'foil', 'gold', 'prism']
+    .map((v) => `${v === 'normal' ? '🃏' : config.VARIANTS[v].fallbackEmoji} ${ownedOf(v)}`)
+    .join(' · ');
 
   const embed = new EmbedBuilder()
     .setColor(rarity.color)
-    .setTitle(`${remoji(fruit.rarity)} ${fruit.name}${variant === 'foil' ? ' ✨FOIL' : ''}`)
+    .setTitle(`${remoji(fruit.rarity)} ${fruit.name}${variantLabel(variant)}`)
     .setDescription(`🧠 *Fun fact: ${fruit.flavor}*`)
     .addFields(
+      { name: 'Type', value: `${temoji(fruit.type)} ${type.name}`, inline: true },
       { name: 'Rarity', value: rarity.name, inline: true },
-      { name: 'ATK', value: `⚔️ ${fruit.atk}`, inline: true },
       { name: 'HP', value: `❤️ ${fruit.hp}`, inline: true },
-      { name: `${ability.emoji} ${ability.name} (${config.ABILITY_COST}⚡)`, value: ability.desc, inline: false },
-      { name: 'You own', value: `🃏 ${normalOwned} · ✨ ${foilOwned}`, inline: true },
+      {
+        name: 'Matchups',
+        value: `Weak to ${temoji(type.weakTo)} ${TYPES[type.weakTo].name} (×1.5) · Resists ${temoji(type.resists)} ${TYPES[type.resists].name} (×0.75)`,
+        inline: false,
+      },
+      { name: `⚔️ ${moves.quick.name} (1⚡)`, value: `${moves.quick.dmg} damage`, inline: true },
+      { name: `${sig.emoji} ${sig.name} (${config.ABILITY_COST}⚡)`, value: sigEffect, inline: true },
+      { name: 'You own', value: ownedText, inline: false },
       { name: 'Sell value', value: `${sellValue(fruit, variant)} 🪙`, inline: true }
     )
     .setImage('attachment://card.png');
 
-  const other = variant === 'foil' ? 'normal' : 'foil';
+  const variantCycle = ['normal', 'foil', 'gold', 'prism'];
+  const other = variantCycle[(variantCycle.indexOf(variant) + 1) % variantCycle.length];
   const src = source || 1;
   const backButton =
     src === 'd'
@@ -282,7 +300,7 @@ async function cardScreen(ctx, user, fruitId, variant, source) {
     components: [
       new ActionRowBuilder().addComponents(
         backButton,
-        btn('card', fruitId, `${other}|${src}`, user.id, other === 'foil' ? 'View Foil' : 'View Normal', ButtonStyle.Primary, '✨'),
+        btn('card', fruitId, `${other}|${src}`, user.id, `View ${config.VARIANTS[other]?.name || 'Normal'}`, ButtonStyle.Primary, '✨'),
         btn('home', '', '', user.id, 'Home', ButtonStyle.Secondary, '🏠')
       ),
     ],
@@ -436,8 +454,84 @@ async function helpScreen(ctx, user) {
   const lines = [...new Set(ctx.commands.values())]
     .map((c) => `\`${c.usage}\` — ${c.description}`)
     .join('\n');
-  const embed = new EmbedBuilder().setColor(0x3498db).setTitle('🍇 FruitCards Commands').setDescription(lines);
-  return { embeds: [embed], files: [], components: [backRow(user.id)] };
+  const embed = new EmbedBuilder()
+    .setColor(0x3498db)
+    .setTitle('🍇 FruitCards Commands')
+    .setDescription(`🎓 *New here? Hit the Tutorial button below!*\n\n${lines}`);
+  return {
+    embeds: [embed],
+    files: [],
+    components: [backRow(user.id, [btn('tut', 'basics', '', user.id, 'Tutorial', ButtonStyle.Success, '🎓')])],
+  };
+}
+
+// ── Tutorial ───────────────────────────────────────────────────────
+
+const TYPE_CYCLE = ['citrus', 'vine', 'stone', 'berry', 'tropical', 'orchard'];
+
+function tutorialTopics(ctx, user, active) {
+  return new ActionRowBuilder().addComponents(
+    btn('tut', 'basics', '', user.id, 'Basics', active === 'basics' ? ButtonStyle.Success : ButtonStyle.Secondary, '🌱'),
+    btn('tut', 'packs', '', user.id, 'Packs & Cards', active === 'packs' ? ButtonStyle.Success : ButtonStyle.Secondary, '📦'),
+    btn('tut', 'battle', '', user.id, 'Battling', active === 'battle' ? ButtonStyle.Success : ButtonStyle.Secondary, '⚔️'),
+    btn('tut', 'market', '', user.id, 'Trading', active === 'market' ? ButtonStyle.Success : ButtonStyle.Secondary, '🏛️')
+  );
+}
+
+async function tutorialScreen(ctx, user, topic = 'basics') {
+  const embed = new EmbedBuilder().setColor(0x66bb6a);
+  if (topic === 'packs') {
+    embed
+      .setTitle('🎓 Tutorial — Packs & Cards')
+      .setDescription(
+        `📦 Buy packs in the **Shop** — every pack holds **5 cards**.\n` +
+          `• ${config.PACKS.standard.emoji} Standard (${config.PACKS.standard.price}🪙) · ${config.PACKS.juicy.emoji} Juicy (${config.PACKS.juicy.price}🪙, better odds) · ${config.PACKS.exotic.emoji} Exotic (${config.PACKS.exotic.price}🪙, best odds)\n` +
+          `• Pricier packs guarantee rarer cards and roll better ✨ variant chances\n\n` +
+          `🌈 **Variants**: cards can drop as ✨ Foil (sell ×4), 🥇 Gold (×10), or 🌈 Prism (×25) — same stats, way cooler card\n` +
+          `🆕 marks a fruit you've never pulled before\n` +
+          `💰 Sell spares with \`fsell <fruit> [foil/gold/prism] [n|all]\` — rarer cards and variants sell for more\n` +
+          `📖 Track your completion in the **FruitDex** — inspect any card, even undiscovered ones`
+      );
+  } else if (topic === 'battle') {
+    const chart = TYPE_CYCLE.map((key, i) => {
+      const next = TYPE_CYCLE[(i + 1) % TYPE_CYCLE.length];
+      return `${temoji(key)} ${TYPES[key].name} beats ${temoji(next)} ${TYPES[next].name}`;
+    }).join('\n');
+    embed
+      .setTitle('🎓 Tutorial — Battling')
+      .setDescription(
+        `⚔️ Battle with \`fbattle @friend\` or matchmake with **Find Battle** — matches run in private threads, even across servers!\n\n` +
+          `**1.** Draft a team of ${config.TEAM_SIZE} fruits — one fights, the rest wait on the bench\n` +
+          `**2.** You gain **1⚡ energy** at the start of each turn (bank up to ${config.POWER_CAP})\n` +
+          `**3.** Spend it: quick attack (1⚡), **signature move** (3⚡), Guard (1⚡, shield), Retreat (1⚡, swap fruit), or Charge (bank +1⚡)\n` +
+          `**4.** Knock out all ${config.TEAM_SIZE} enemy fruits to win coins!\n\n` +
+          `**Type matchups** (×1.5 damage, and each type resists the one it beats ×0.75):\n${chart}\n\n` +
+          `*Tip: check a card's Matchups before drafting — a well-typed team wins uphill fights.*`
+      );
+  } else if (topic === 'market') {
+    embed
+      .setTitle('🎓 Tutorial — Trading & Auctions')
+      .setDescription(
+        `🤝 **Trade** cards directly:\n\`ftrade @friend give apple get banana x2\` — they accept with a button, the swap is instant and safe\n\n` +
+          `🏛️ **Auction house** (cross-server!):\n` +
+          `• List: \`fauction <fruit> [foil] [minBid]\` — the card is held in escrow for 10 minutes\n` +
+          `• Bid from the **Auctions** screen or \`fbid <id> <amount>\` — your coins are escrowed and refunded instantly if outbid\n` +
+          `• Highest bid when the hammer falls wins the card; the seller gets the coins\n\n` +
+          `*Tip: rare pulls and shiny variants often fetch far more at auction than fsell!*`
+      );
+  } else {
+    embed
+      .setTitle('🎓 Tutorial — Basics')
+      .setDescription(
+        `Welcome to **FruitCards** — collect all ${FRUITS.length} real fruits, battle friends, and build the shiniest binder on Discord!\n\n` +
+          `🪙 **Earn coins**: \`fdaily\` every 24h (streaks pay extra) and \`fdrop\` every 2 minutes — drops chain +10 with 50% luck, forever\n` +
+          `🎁 **Codes**: redeem with \`fcode <code>\` *(psst — try \`fcode release\`)*\n` +
+          `📦 **Spend coins** on packs in the Shop, then rip them open\n` +
+          `⚔️ **Battle** to win even more coins\n\n` +
+          `Everything lives in **\`fmenu\`** — one message, buttons for it all. Flip through the tutorial topics below!`
+      );
+  }
+  return { embeds: [embed], files: [], components: [tutorialTopics(ctx, user, topic), backRow(user.id)] };
 }
 
 // ── Router ─────────────────────────────────────────────────────────
@@ -497,6 +591,7 @@ async function handleComponent(interaction, ctx) {
   else if (action === 'dex') payload = await dexScreen(ctx, user);
   else if (action === 'top') payload = await topScreen(ctx, user);
   else if (action === 'help') payload = await helpScreen(ctx, user);
+  else if (action === 'tut') payload = await tutorialScreen(ctx, user, a || 'basics');
   else if (action === 'queue') {
     if (ctx.matchmaking.queue.has(user.id)) {
       ctx.matchmaking.remove(user.id);
@@ -578,4 +673,5 @@ module.exports = {
   dexScreen,
   topScreen,
   helpScreen,
+  tutorialScreen,
 };

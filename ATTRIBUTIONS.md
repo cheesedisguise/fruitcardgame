@@ -43,3 +43,13 @@ cropped/flattened onto a white background for card rendering.
 | kumquat | Kumquat-0245.jpg | Loadmaster (David R. Tribble) This image was made by Loadmaster (David R. Tribble). Email the author: David R. Tribble Also see my personal gallery at Google Photos | CC BY-SA 3.0 | [link](https://commons.wikimedia.org/wiki/File:Kumquat-0245.jpg) |
 | finger_lime | Citrus australasica - Australian finger lime - 5180.jpg | Amada44 | CC BY-SA 3.0 | [link](https://commons.wikimedia.org/wiki/File:Citrus_australasica_-_Australian_finger_lime_-_5180.jpg) |
 | pineberry | Single pineberry.jpg | Grendelkhan | CC BY-SA 4.0 | [link](https://commons.wikimedia.org/wiki/File:Single_pineberry.jpg) |
+| tomato | Bright red tomato and cross section02.jpg | fir0002 flagstaffotos [at] gmail.com Canon 20D + Sigma 150mm f/2.8 | GFDL 1.2 | [link](https://commons.wikimedia.org/wiki/File:Bright_red_tomato_and_cross_section02.jpg) |
+| clementine | Citrus clementine.JPG | Propaganda | CC BY-SA 3.0 | [link](https://commons.wikimedia.org/wiki/File:Citrus_clementine.JPG) |
+| blackberry | Rubuscanadensis.jpg | Unknown authorUnknown author | Public domain | [link](https://commons.wikimedia.org/wiki/File:Rubuscanadensis.jpg) |
+| cranberry | Cranberry whole.JPG | Bobolo94 | CC BY-SA 3.0 | [link](https://commons.wikimedia.org/wiki/File:Cranberry_whole.JPG) |
+| grapefruit | Citrus paradisi (Grapefruit, pink) white bg (cropped).jpg | Citrus_paradisi_(Grapefruit,_pink).jpg: א (Aleph) derivative work: — raeky | CC BY-SA 2.5 | [link](https://commons.wikimedia.org/wiki/File:Citrus_paradisi_(Grapefruit,_pink)_white_bg_(cropped).jpg) |
+| cantaloupe | Cantaloupe.jpg | Renee Comet (Photographer) | Public domain | [link](https://commons.wikimedia.org/wiki/File:Cantaloupe.jpg) |
+| nectarine | White peach and cross section edit.jpg | Fir0002 | GFDL 1.2 | [link](https://commons.wikimedia.org/wiki/File:White_peach_and_cross_section_edit.jpg) |
+| honeydew | Honeydew.jpg | Yotoen | Public domain | [link](https://commons.wikimedia.org/wiki/File:Honeydew.jpg) |
+| pomelo | South Indian Pomello cut in Half.png | Viswaprabha | CC BY-SA 3.0 | [link](https://commons.wikimedia.org/wiki/File:South_Indian_Pomello_cut_in_Half.png) |
+| tamarind | Tamarind pods edible part.jpg | Sonja Pauen - Stanhopea | CC BY 2.0 de | [link](https://commons.wikimedia.org/wiki/File:Tamarind_pods_edible_part.jpg) |

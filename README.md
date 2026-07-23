@@ -1,15 +1,17 @@
 # 🍎 FruitCards
 
 A fruit trading card game Discord bot — like Pokémon TCG, but every card is a fruit.
-Collect all 37 fruits, open packs, trade, auction, and battle across servers!
+Collect all 47 fruits, open packs, trade, auction, and battle across servers!
 
-- 🃏 **37 collectible fruit cards** — all real fruits — across 6 rarities (Common → Mythic), each with **ATK**, **HP**, an **ability**, and real fruit photography on a clean white background (openly licensed images, see [ATTRIBUTIONS.md](ATTRIBUTIONS.md)). Card text is a real fact about the fruit.
+- 🃏 **47 collectible fruit cards** — all real fruits — across 6 rarities (Common → Mythic), each with a **type**, **HP**, two **printed moves**, and real fruit photography on a clean white background (openly licensed images, see [ATTRIBUTIONS.md](ATTRIBUTIONS.md)). Card text is a real fact about the fruit.
+- 🍋 **Six fruit types** in a weakness cycle (Citrus → Vine → Stone → Berry → Tropical → Orchard → Citrus): super-effective hits deal ×1.5, resisted hits ×0.75 — team-building matters
 - 🌟 **Rarer = stronger.** Every rarity tier is a clear power jump — and the **Apple** is the rarest card in the game
-- ✨ **Foil variants** — every card can drop as a holographic foil worth 4× on sale
-- 📦 **Three pack tiers** — Standard (100🪙), Juicy (250🪙), Exotic (600🪙): pricier packs mean better odds, better pity guarantees, and higher foil chances. 5 cards per pack
-- 🪙 **Coin economy** — `fdaily` streaks, `fdrop` chain drops every 2 minutes (50% to keep chaining +10, forever), selling, and a leaderboard
-- ⚔️ **Team battles in private threads** — draft a team of 3, gain 1⚡ power per turn, spend it on **Attack / Block / per-fruit Abilities / Switch / Charge**. Challenge friends (`fbattle`) or use **cross-server matchmaking** (`fqueue`); cross-server matches sync one private thread per player, and threads self-delete when the match ends
+- ✨ **Card variants** — every card can drop as ✨ Foil (sells ×4), 🥇 Gold (×10), or 🌈 Prism (×25), each with its own frame treatment
+- 📦 **Three pack tiers** — Standard (100🪙), Juicy (250🪙), Exotic (600🪙): pricier packs mean better odds, better pity guarantees, and better variant chances. 5 cards per pack
+- 🪙 **Coin economy** — `fdaily` streaks, `fdrop` chain drops every 2 minutes (50% to keep chaining +10, forever), redeem codes, selling, and a leaderboard
+- ⚔️ **TCG battles in private threads** — draft a team of 3, gain 1⚡ energy per turn, spend it on your fruit's **quick attack**, its named **signature move**, **Guard**, **Retreat**, or **Charge**. Challenge friends (`fbattle`) or use **cross-server matchmaking** (`fqueue`); threads self-delete when the match ends
 - 🤝 **Trading** and a 🏛️ **cross-server auction house** with escrowed bids
+- 🎓 Built-in **tutorial** (`ftutorial` or the app's Tutorial button)
 
 ## The app
 
@@ -33,7 +35,7 @@ Everything also works as plain text commands:
 | `fopen [pack]` | Pack opening GUI — rip packs with buttons |
 | `fcards [@user] [page]` | Browse a collection (foils marked ✨) |
 | `fcard <fruit> [foil]` | View a card up close, its ability & fact |
-| `fdex` | FruitDex — track all 37 fruits |
+| `fdex` | FruitDex — track all 47 fruits |
 | `fqueue` | Cross-server matchmaking (`fqueue leave` to exit) |
 | `fbattle @user` | Challenge someone directly |
 | `ftrade @user give <fruit> [foil] [xN] get <fruit> [foil] [xN]` | Trade cards |
@@ -44,24 +46,26 @@ Everything also works as plain text commands:
 | `fbalance` | Your profile & stats |
 | `fshop` | The pack shop — browse & buy with buttons |
 | `ftop` | Leaderboard |
-| `fhelp` | All commands |
+| `ftutorial` | Interactive tutorial (types, packs, trading) |
+| `fhelp` | All commands (tells new players to fstart) |
 
 ## Battle system
 
 Draft **3 fruits** from your collection. One fights, two wait on the bench.
-You gain **1⚡ each turn** (cap 10) and spend it:
+You gain **1⚡ energy each turn** (cap 10) and spend it:
 
 | Action | Cost | Effect |
 |---|---|---|
-| ⚔️ Attack | 1⚡ | Deal ATK damage (±15%, 10% crit ×1.5) |
-| 🛡️ Block | 1⚡ | Gain shield = 75% of ATK (stacks, absorbs damage) |
-| ✨ Ability | 3⚡ | Your fruit's signature move (below) |
-| 🔄 Switch | 1⚡ | Swap in a bench fruit |
+| ⚔️ Quick attack | 1⚡ | Your fruit's printed light move (0.7× ATK, rounded to 5s) |
+| ✨ Signature move | 3⚡ | Named per fruit — Smash 1.8× · Pierce 1.2× (ignores shields & types) · Drain 0.9× + lifesteal · Flurry: flip 2 coins, 0.9× per heads · Regrow: heal 50% · Ripen: +10 team ATK |
+| 🛡️ Guard | 1⚡ | Gain shield = 75% of ATK (stacks, absorbs damage) |
+| 🔄 Retreat | 1⚡ | Swap in a bench fruit |
 | ⚡ Charge | free | Bank +1⚡ |
 
-Abilities by fruit: 💥 **Smash** (1.8× ATK) · 💚 **Regrow** (heal 45%) · 🗡️ **Pierce**
-(1.2×, ignores shield) · 🧛 **Drain** (0.9×, heals half) · 🌪️ **Flurry** (2 hits of
-0.75×) · 📈 **Ripen** (+5 ATK permanently). Knock out all three enemy fruits to win.
+Damage is deterministic like the real TCG (coin-flip moves excepted) and
+type-adjusted: each type is **super effective (×1.5)** against the next in the
+cycle Citrus → Vine → Stone → Berry → Tropical → Orchard → Citrus, and resists
+(×0.75) the type it beats. Knock out all three enemy fruits to win.
 
 ## Setup
 
@@ -88,15 +92,18 @@ Abilities by fruit: 💥 **Smash** (1.8× ATK) · 💚 **Regrow** (heal 45%) · 
 
 When the logs show `🍎 FruitCards is ready!`, type `fstart` in your server.
 
-### 3. Custom rarity emojis (optional but pretty)
+### 3. Custom emojis (optional but pretty)
 
-Upload the six images in `assets/emoji/` as custom emojis in any server the bot
-is in, named exactly:
-`:common:` `:uncommon:` `:rare:` `:epic:` `:legendary:` `:mythic:`
+Upload the images in `assets/emoji/` as custom emojis in any server the bot is
+in, named exactly after their filenames:
+
+- Rarities: `:common:` `:uncommon:` `:rare:` `:epic:` `:legendary:` `:mythic:`
+- Variants: `:foil:` `:gold:` `:prism:`
+- Types: `:citrus:` `:vine:` `:stone:` `:berry:` `:tropical:` `:orchard:`
 
 The bot detects them by name automatically and uses them everywhere (rarity
-lists, pack pulls, battle menus). No emoji? It falls back to colored circles.
-Regenerate the images anytime with `node scripts/make-emoji.js`.
+lists, pack pulls, battle menus, card screens). Missing ones fall back to
+standard emoji. Regenerate the images anytime with `node scripts/make-emoji.js`.
 
 ## Project layout
 
@@ -112,9 +119,9 @@ src/
   battle.js      team battle engine (power, abilities, synced thread views)
   matchmaking.js cross-server matchmaking queue
   commands/      one file per command
-  art/           37 real fruit photos (512x512 PNG, white background)
+  art/           47 real fruit photos (512x512 PNG, white background)
 assets/fonts/    bundled fonts (SIL OFL): Finger Paint (card text), Nunito
-assets/emoji/    rarity emoji images to upload as :common: etc.
+assets/emoji/    rarity/type/variant emoji images to upload as :common: etc.
 ATTRIBUTIONS.md  photo credits & licenses
 ```
 

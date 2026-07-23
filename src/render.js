@@ -26,7 +26,7 @@ function setupFonts() {
 setupFonts();
 const sharp = require('sharp');
 
-const { RARITIES, getFruit } = require('./fruits');
+const { RARITIES, TYPES, getFruit, movesFor } = require('./fruits');
 
 const CARD_W = 400;
 const CARD_H = 560;
@@ -82,81 +82,114 @@ function sparkle(cx, cy, r, fill = '#ffffff', opacity = 0.9) {
   return `<path d="M${cx} ${cy - r} Q${cx + r * 0.18} ${cy - r * 0.18} ${cx + r} ${cy} Q${cx + r * 0.18} ${cy + r * 0.18} ${cx} ${cy + r} Q${cx - r * 0.18} ${cy + r * 0.18} ${cx - r} ${cy} Q${cx - r * 0.18} ${cy - r * 0.18} ${cx} ${cy - r} Z" fill="${fill}" opacity="${opacity}"/>`;
 }
 
+// Variant frame treatments layered over/instead of the rarity gradient.
+const VARIANT_FRAMES = {
+  foil: `<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b388ff"/><stop offset="0.33" stop-color="#4dd0e1"/>
+      <stop offset="0.66" stop-color="#ffd54f"/><stop offset="1" stop-color="#ff80ab"/>
+    </linearGradient>`,
+  gold: `<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f9e8a8"/><stop offset="0.5" stop-color="#d4af37"/>
+      <stop offset="1" stop-color="#8a6d1a"/>
+    </linearGradient>`,
+  prism: `<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff5252"/><stop offset="0.2" stop-color="#ffb300"/>
+      <stop offset="0.4" stop-color="#ffee58"/><stop offset="0.6" stop-color="#66bb6a"/>
+      <stop offset="0.8" stop-color="#42a5f5"/><stop offset="1" stop-color="#ab47bc"/>
+    </linearGradient>`,
+};
+
+function sheenStripes(opacity, angle = 24) {
+  return `<g clip-path="url(#cardClip)" opacity="${opacity}">
+    <rect x="-260" y="-40" width="70" height="760" fill="#ffffff" transform="rotate(${angle} 200 280)"/>
+    <rect x="-40" y="-40" width="34" height="760" fill="#ffffff" transform="rotate(${angle} 200 280)"/>
+    <rect x="180" y="-40" width="52" height="760" fill="#ffffff" transform="rotate(${angle} 200 280)"/>
+    <rect x="400" y="-40" width="26" height="760" fill="#ffffff" transform="rotate(${angle} 200 280)"/>
+  </g>`;
+}
+
+// TCG-style card: type pill + HP in the header, art window, two printed
+// moves with energy-cost dots, rarity ribbon, fun-fact footer.
 function cardSvg(fruit, variant = 'normal') {
-  const foil = variant === 'foil';
+  const special = variant !== 'normal';
   const [light, dark] = FRAME_COLORS[fruit.rarity];
   const rarity = RARITIES[fruit.rarity];
-  const flavorLines = wrapFlavor(fruit.flavor);
+  const type = TYPES[fruit.type];
+  const moves = movesFor(fruit);
+
+  const frameGradient =
+    VARIANT_FRAMES[variant] ||
+    `<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${light}"/><stop offset="1" stop-color="${dark}"/>
+    </linearGradient>`;
+
+  const sheen =
+    variant === 'foil' ? sheenStripes(0.22) : variant === 'gold' ? sheenStripes(0.16) : variant === 'prism' ? sheenStripes(0.2) + sheenStripes(0.12, -24) : '';
+
+  const sparkles =
+    special || fruit.rarity === 'legendary' || fruit.rarity === 'mythic'
+      ? [sparkle(38, 100, 9), sparkle(366, 130, 7), sparkle(30, 340, 6), sparkle(372, 310, 9), sparkle(363, 64, 5)].join('\n') +
+        (variant === 'prism' ? [sparkle(60, 460, 8), sparkle(340, 490, 7), sparkle(200, 70, 6)].join('\n') : '')
+      : '';
+
+  const costDots = (n, y) => {
+    let dots = '';
+    for (let i = 0; i < n; i++) {
+      dots += `<circle cx="${42 + i * 16}" cy="${y}" r="5.5" fill="#ffd54f" stroke="#00000055" stroke-width="1"/>`;
+    }
+    return dots;
+  };
+
+  const sig = moves.signature;
+  const sigRight = sig.dmg != null ? `${sig.dmg}${sig.kind === 'flurry' ? '×2' : ''}` : sig.heal != null ? `+${sig.heal}` : `+${sig.buff}`;
+  const sigRightLabel = sig.kind === 'flurry' ? 'PER HEADS' : sig.heal != null ? 'HEAL' : sig.buff != null ? 'TEAM ATK' : sig.kind === 'pierce' ? 'PIERCING' : 'DMG';
+
+  const flavorLines = wrapFlavor(fruit.flavor, 46);
   const flavorSvg = flavorLines
     .map(
       (line, i) =>
-        `<text x="200" y="${524 + i * 18}" font-family="Finger Paint" font-style="italic" font-weight="600" font-size="14" fill="#ffffff" opacity="0.85" text-anchor="middle">${esc(line)}</text>`
+        `<text x="200" y="${512 + i * 16}" font-family="Finger Paint" font-style="italic" font-size="11.5" fill="#ffffff" opacity="0.85" text-anchor="middle">${esc(line)}</text>`
     )
     .join('\n');
 
-  const legendarySparkles =
-    foil || fruit.rarity === 'legendary' || fruit.rarity === 'mythic'
-      ? [sparkle(38, 100, 9), sparkle(366, 130, 7), sparkle(30, 350, 6), sparkle(372, 320, 9), sparkle(360, 66, 5)].join('\n')
-      : '';
-
-  const frameGradient = foil
-    ? `<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#b388ff"/>
-      <stop offset="0.33" stop-color="#4dd0e1"/>
-      <stop offset="0.66" stop-color="#ffd54f"/>
-      <stop offset="1" stop-color="#ff80ab"/>
-    </linearGradient>`
-    : `<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${light}"/>
-      <stop offset="1" stop-color="${dark}"/>
-    </linearGradient>`;
-
-  // Diagonal sheen stripes give foil cards a holographic shimmer.
-  const foilSheen = foil
-    ? `<g clip-path="url(#cardClip)" opacity="0.22">
-      <rect x="-260" y="-40" width="70" height="760" fill="#ffffff" transform="rotate(24 200 280)"/>
-      <rect x="-40" y="-40" width="34" height="760" fill="#ffffff" transform="rotate(24 200 280)"/>
-      <rect x="180" y="-40" width="52" height="760" fill="#ffffff" transform="rotate(24 200 280)"/>
-      <rect x="400" y="-40" width="26" height="760" fill="#ffffff" transform="rotate(24 200 280)"/>
-    </g>
-    ${sparkle(160, 505, 6)}
-    <text x="200" y="510" font-family="Finger Paint" font-size="13" fill="#ffffff" opacity="0.95" text-anchor="middle" letter-spacing="3">FOIL</text>
-    ${sparkle(240, 505, 6)}`
-    : '';
+  const rarityLabel = `${rarity.name.toUpperCase()}${special ? ` · ${variant.toUpperCase()}` : ''}`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${CARD_W}" height="${CARD_H}" viewBox="0 0 ${CARD_W} ${CARD_H}">
   <defs>
     ${frameGradient}
-    <clipPath id="artClip"><rect x="20" y="80" width="360" height="310" rx="14"/></clipPath>
     <clipPath id="cardClip"><rect width="${CARD_W}" height="${CARD_H}" rx="24"/></clipPath>
   </defs>
 
   <rect width="${CARD_W}" height="${CARD_H}" rx="24" fill="url(#frame)"/>
   <rect x="8" y="8" width="${CARD_W - 16}" height="${CARD_H - 16}" rx="18" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
 
-  <rect x="20" y="20" width="360" height="48" rx="14" fill="#000000" opacity="0.28"/>
-  <text x="200" y="53" font-family="Finger Paint" font-weight="800" font-size="28" fill="#ffffff" text-anchor="middle">${esc(fruit.name)}</text>
+  <rect x="20" y="18" width="360" height="46" rx="14" fill="#000000" opacity="0.3"/>
+  <rect x="28" y="27" width="88" height="27" rx="13.5" fill="${type.color}"/>
+  <text x="72" y="45" font-family="Finger Paint" font-size="13" fill="#ffffff" text-anchor="middle">${type.name.toUpperCase()}</text>
+  <text x="126" y="49" font-family="Finger Paint" font-size="${fruit.name.length > 11 ? 17 : 21}" fill="#ffffff">${esc(fruit.name)}</text>
+  <text x="372" y="49" font-family="Finger Paint" font-size="21" fill="#ffffff" text-anchor="end">HP ${fruit.hp}</text>
 
-  <rect x="20" y="80" width="360" height="310" rx="14" fill="#ffffff"/>
+  <rect x="20" y="72" width="360" height="280" rx="14" fill="#ffffff"/>
+
+  <rect x="20" y="360" width="360" height="48" rx="12" fill="#000000" opacity="0.28"/>
+  ${costDots(1, 384)}
+  <text x="62" y="391" font-family="Finger Paint" font-size="16" fill="#ffffff">${esc(moves.quick.name)}</text>
+  <text x="364" y="393" font-family="Finger Paint" font-size="22" fill="#ffffff" text-anchor="end">${moves.quick.dmg}</text>
+
+  <rect x="20" y="414" width="360" height="48" rx="12" fill="#000000" opacity="0.28"/>
+  ${costDots(3, 438)}
+  <text x="94" y="445" font-family="Finger Paint" font-size="16" fill="#ffffff">${esc(sig.name)}</text>
+  <text x="364" y="440" font-family="Finger Paint" font-size="20" fill="#ffffff" text-anchor="end">${sigRight}</text>
+  <text x="364" y="456" font-family="Finger Paint" font-size="9.5" fill="#ffffff" opacity="0.75" text-anchor="end" letter-spacing="1">${sigRightLabel}</text>
 
   <g fill="#ffffff" opacity="0.9">
-    <polygon points="46,410 52,404 58,410 52,416"/>
-    <polygon points="342,410 348,404 354,410 348,416"/>
+    <polygon points="46,482 52,476 58,482 52,488"/>
+    <polygon points="342,482 348,476 354,482 348,488"/>
   </g>
-  <text x="200" y="416" font-family="Finger Paint" font-weight="800" font-size="17" fill="#ffffff" opacity="0.95" text-anchor="middle" letter-spacing="3">${rarity.name.toUpperCase()}</text>
+  <text x="200" y="488" font-family="Finger Paint" font-size="14" fill="#ffffff" opacity="0.95" text-anchor="middle" letter-spacing="3">${rarityLabel}</text>
 
-  <rect x="28" y="430" width="164" height="62" rx="14" fill="#000000" opacity="0.28"/>
-  <g transform="translate(44,452) scale(1.3)">${SWORD_ICON}</g>
-  <text x="80" y="454" font-family="Finger Paint" font-weight="700" font-size="14" fill="#ffffff" opacity="0.75">ATK</text>
-  <text x="80" y="482" font-family="Finger Paint" font-weight="800" font-size="30" fill="#ffffff">${fruit.atk}</text>
-
-  <rect x="208" y="430" width="164" height="62" rx="14" fill="#000000" opacity="0.28"/>
-  <g transform="translate(224,452) scale(1.3)">${HEART_ICON}</g>
-  <text x="262" y="454" font-family="Finger Paint" font-weight="700" font-size="14" fill="#ffffff" opacity="0.75">HP</text>
-  <text x="262" y="482" font-family="Finger Paint" font-weight="800" font-size="30" fill="#ffffff">${fruit.hp}</text>
-
-  ${foilSheen}
-  ${legendarySparkles}
+  ${sheen}
+  ${sparkles}
   ${flavorSvg}
 </svg>`;
 }
@@ -175,11 +208,11 @@ async function renderCard(fruitId, variant = 'normal') {
   } else {
     // Frame first (with an empty white art window), then the photo on top.
     const photo = await sharp(artPath(fruitId))
-      .resize(310, 310, { fit: 'contain', background: '#ffffff' })
+      .resize(264, 264, { fit: 'contain', background: '#ffffff' })
       .png()
       .toBuffer();
     buf = await sharp(Buffer.from(cardSvg(fruit, variant)))
-      .composite([{ input: photo, left: 45, top: 80 }])
+      .composite([{ input: photo, left: 68, top: 78 }])
       .png()
       .toBuffer();
     fs.mkdirSync(path.dirname(diskPath), { recursive: true });

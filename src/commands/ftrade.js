@@ -3,19 +3,14 @@
 const crypto = require('crypto');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const config = require('../config');
-const { findFruit, variantLabel, remoji } = require('../util');
+const { findFruit, variantLabel, remoji, extractVariant } = require('../util');
 
 const pending = new Map(); // tradeId -> trade
 
 function parseSide(tokens) {
   const rest = [...tokens];
-  let variant = 'normal';
   let qty = 1;
-  const foilIdx = rest.findIndex((t) => t.toLowerCase() === 'foil');
-  if (foilIdx !== -1) {
-    variant = 'foil';
-    rest.splice(foilIdx, 1);
-  }
+  const variant = extractVariant(rest);
   const last = rest[rest.length - 1]?.toLowerCase();
   const m = last?.match(/^x?(\d+)$/);
   if (m) {

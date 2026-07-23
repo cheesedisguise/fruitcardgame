@@ -16,8 +16,17 @@ module.exports = {
   DROP_CHAIN_CHANCE: 0.5,
   DROP_COOLDOWN_MS: 2 * 60 * 1000,
 
+  // Card variants (beyond normal). Rolled per card, rarest first; odds vary
+  // per pack. Sell price = rarity value × the variant's sellMult.
+  VARIANTS: {
+    foil: { name: 'Foil', fallbackEmoji: '✨', sellMult: 4 },
+    gold: { name: 'Gold', fallbackEmoji: '🥇', sellMult: 10 },
+    prism: { name: 'Prism', fallbackEmoji: '🌈', sellMult: 25 },
+  },
+
   // Pack shop. odds are per-mille (out of 1000) per card; pity guarantees at
-  // least one card at that rarity or better per pack; foilChance is per card.
+  // least one card at that rarity or better per pack; variantChances is the
+  // per-card chance of each special variant.
   PACKS: {
     standard: {
       id: 'standard',
@@ -25,7 +34,7 @@ module.exports = {
       emoji: '📦',
       price: 100,
       size: 5,
-      foilChance: 0.04,
+      variantChances: { prism: 0.001, gold: 0.004, foil: 0.02 },
       pity: 'uncommon',
       odds: { common: 599, uncommon: 250, rare: 100, epic: 40, legendary: 10, mythic: 1 },
     },
@@ -35,7 +44,7 @@ module.exports = {
       emoji: '🧃',
       price: 250,
       size: 5,
-      foilChance: 0.08,
+      variantChances: { prism: 0.0025, gold: 0.01, foil: 0.04 },
       pity: 'rare',
       odds: { common: 400, uncommon: 300, rare: 180, epic: 80, legendary: 32, mythic: 8 },
     },
@@ -45,13 +54,12 @@ module.exports = {
       emoji: '🌺',
       price: 600,
       size: 5,
-      foilChance: 0.15,
+      variantChances: { prism: 0.005, gold: 0.02, foil: 0.08 },
       pity: 'epic',
       odds: { common: 150, uncommon: 300, rare: 300, epic: 150, legendary: 80, mythic: 20 },
     },
   },
   MAX_PACKS_PER_BUY: 10,
-  FOIL_SELL_MULTIPLIER: 4,
 
   // Auctions
   AUCTION_DURATION_MS: 10 * 60 * 1000,

@@ -1,17 +1,15 @@
 const ui = require('../ui');
-const { findFruit } = require('../util');
+const { findFruit, extractVariant } = require('../util');
 
 module.exports = {
   name: 'fcard',
   aliases: ['finfo'],
-  description: 'View a card up close (add "foil" for the foil version)',
-  usage: 'fcard <fruit> [foil]',
+  description: 'View a card up close (add foil/gold/prism for variants)',
+  usage: 'fcard <fruit> [foil/gold/prism]',
   async execute(message, args, ctx) {
     if (args.length === 0) return message.reply('Which card? Try `fcard apple` or `fcard apple foil`');
     const rest = [...args];
-    const foilIdx = rest.findIndex((t) => t.toLowerCase() === 'foil');
-    const variant = foilIdx !== -1 ? 'foil' : 'normal';
-    if (foilIdx !== -1) rest.splice(foilIdx, 1);
+    const variant = extractVariant(rest);
 
     const fruit = findFruit(rest.join(' '));
     if (!fruit) return message.reply(`❓ No fruit matches "${rest.join(' ')}". See them all with \`fdex\`.`);

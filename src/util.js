@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { FRUITS, RARITIES } = require('./fruits');
+const { FRUITS, RARITIES, TYPES } = require('./fruits');
 const config = require('./config');
 
 const RARITY_ORDER = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
@@ -52,14 +52,24 @@ function randomFruitOfRarity(rarity) {
   return pool[pool.length - 1];
 }
 
+// Roll a card's variant: rarest first (prism, then gold, then foil).
+function rollVariant(variantChances) {
+  const roll = crypto.randomInt(1000000) / 1000000;
+  let cumulative = 0;
+  for (const variant of ['prism', 'gold', 'foil']) {
+    cumulative += variantChances[variant] || 0;
+    if (roll < cumulative) return variant;
+  }
+  return 'normal';
+}
+
 // Roll a full pack of a given type. Returns [{ fruit, variant }].
 // Pity rule: at least one card at packDef.pity rarity or better.
 function rollPack(packDef) {
   const cards = [];
   for (let i = 0; i < packDef.size; i++) {
     const fruit = randomFruitOfRarity(rollRarity(packDef.odds));
-    const variant = crypto.randomInt(10000) < packDef.foilChance * 10000 ? 'foil' : 'normal';
-    cards.push({ fruit, variant });
+    cards.push({ fruit, variant: rollVariant(packDef.variantChances || {}) });
   }
   const pityRank = RARITY_RANK.indexOf(packDef.pity);
   if (!cards.some((c) => RARITY_RANK.indexOf(c.fruit.rarity) >= pityRank)) {
@@ -75,7 +85,21 @@ function sortByRarity(a, b) {
 
 function sellValue(fruit, variant = 'normal') {
   const base = RARITIES[fruit.rarity].sellValue;
-  return variant === 'foil' ? base * config.FOIL_SELL_MULTIPLIER : base;
+  const mult = config.VARIANTS[variant]?.sellMult || 1;
+  return base * mult;
+}
+
+// Pull a variant token ('foil'/'gold'/'prism') out of a token array, if present.
+// Mutates the array. Returns the variant name or 'normal'.
+function extractVariant(tokens) {
+  for (const key of Object.keys(config.VARIANTS)) {
+    const idx = tokens.findIndex((t) => t.toLowerCase() === key);
+    if (idx !== -1) {
+      tokens.splice(idx, 1);
+      return key;
+    }
+  }
+  return 'normal';
 }
 
 function coins(n) {
@@ -104,21 +128,42 @@ function remoji(rarityKey) {
   return RARITIES[rarityKey].emoji;
 }
 
+// Type emoji: custom :citrus:/:vine:/... server emoji when available.
+function temoji(typeKey) {
+  if (emojiClient) {
+    const custom = emojiClient.emojis.cache.find((e) => e.name === typeKey);
+    if (custom) return custom.toString();
+  }
+  return TYPES[typeKey].emoji;
+}
+
+// Variant tag like " ✨FOIL" — uses a custom :foil:/:gold:/:prism: server
+// emoji when the bot can see one, otherwise the fallback emoji.
 function variantLabel(variant) {
-  return variant === 'foil' ? ' ✨FOIL' : '';
+  const def = config.VARIANTS[variant];
+  if (!def) return '';
+  let emoji = def.fallbackEmoji;
+  if (emojiClient) {
+    const custom = emojiClient.emojis.cache.find((e) => e.name === variant);
+    if (custom) emoji = custom.toString();
+  }
+  return ` ${emoji}${def.name.toUpperCase()}`;
 }
 
 module.exports = {
   findFruit,
   findPack,
   rollPack,
+  rollVariant,
   sortByRarity,
   sellValue,
+  extractVariant,
   coins,
   timeUntil,
   normalize,
   setEmojiClient,
   remoji,
+  temoji,
   variantLabel,
   RARITY_ORDER,
   RARITY_RANK,
