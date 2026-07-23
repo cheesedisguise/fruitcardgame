@@ -36,3 +36,10 @@ cropped/flattened onto a white background for card rendering.
 | salak | (MHNT) Salacca zalacca - fruit.jpg | Didier Descouens | CC BY-SA 4.0 | [link](https://commons.wikimedia.org/wiki/File:(MHNT)_Salacca_zalacca_-_fruit.jpg) |
 | kiwano | Kiwano 2009.jpg | Kaldari | Public domain | [link](https://commons.wikimedia.org/wiki/File:Kiwano_2009.jpg) |
 | buddhas_hand | Fruit Reference -26.jpg | claralieu | CC BY 2.0 | [link](https://commons.wikimedia.org/wiki/File:Fruit_Reference_-26.jpg) |
+| guava | Guava fruit.jpg | Amada44 | CC BY 3.0 | [link](https://commons.wikimedia.org/wiki/File:Guava_fruit.jpg) |
+| apricot | Apricot and cross section.jpg | Fir0002 | GFDL 1.2 | [link](https://commons.wikimedia.org/wiki/File:Apricot_and_cross_section.jpg) |
+| cherimoya | Annona cherimola.jpg | No machine-readable author provided. Hans B.~commonswiki assumed (based on copyright claims). | Public domain | [link](https://commons.wikimedia.org/wiki/File:Annona_cherimola.jpg) |
+| blood_orange | Blood orange on white.jpg | Rhododendrites | CC BY-SA 4.0 | [link](https://commons.wikimedia.org/wiki/File:Blood_orange_on_white.jpg) |
+| kumquat | Kumquat-0245.jpg | Loadmaster (David R. Tribble) This image was made by Loadmaster (David R. Tribble). Email the author: David R. Tribble Also see my personal gallery at Google Photos | CC BY-SA 3.0 | [link](https://commons.wikimedia.org/wiki/File:Kumquat-0245.jpg) |
+| finger_lime | Citrus australasica - Australian finger lime - 5180.jpg | Amada44 | CC BY-SA 3.0 | [link](https://commons.wikimedia.org/wiki/File:Citrus_australasica_-_Australian_finger_lime_-_5180.jpg) |
+| pineberry | Single pineberry.jpg | Grendelkhan | CC BY-SA 4.0 | [link](https://commons.wikimedia.org/wiki/File:Single_pineberry.jpg) |

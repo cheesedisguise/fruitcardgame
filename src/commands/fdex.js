@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const { FRUITS, RARITIES } = require('../fruits');
+const { remoji } = require('../util');
 
 module.exports = {
   name: 'fdex',
@@ -15,7 +16,7 @@ module.exports = {
       const value = fruits
         .map((f) => (owned.has(f.id) ? `✅ ${f.name} ×${owned.get(f.id)}` : `❌ ~~${f.name}~~`))
         .join('\n');
-      return { name: `${rarity.emoji} ${rarity.name}`, value, inline: true };
+      return { name: `${remoji(key)} ${rarity.name}`, value, inline: true };
     });
 
     const count = FRUITS.filter((f) => owned.has(f.id)).length;

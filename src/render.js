@@ -82,7 +82,8 @@ function sparkle(cx, cy, r, fill = '#ffffff', opacity = 0.9) {
   return `<path d="M${cx} ${cy - r} Q${cx + r * 0.18} ${cy - r * 0.18} ${cx + r} ${cy} Q${cx + r * 0.18} ${cy + r * 0.18} ${cx} ${cy + r} Q${cx - r * 0.18} ${cy + r * 0.18} ${cx - r} ${cy} Q${cx - r * 0.18} ${cy - r * 0.18} ${cx} ${cy - r} Z" fill="${fill}" opacity="${opacity}"/>`;
 }
 
-function cardSvg(fruit) {
+function cardSvg(fruit, variant = 'normal') {
+  const foil = variant === 'foil';
   const [light, dark] = FRAME_COLORS[fruit.rarity];
   const rarity = RARITIES[fruit.rarity];
   const flavorLines = wrapFlavor(fruit.flavor);
@@ -94,17 +95,40 @@ function cardSvg(fruit) {
     .join('\n');
 
   const legendarySparkles =
-    fruit.rarity === 'legendary' || fruit.rarity === 'mythic'
+    foil || fruit.rarity === 'legendary' || fruit.rarity === 'mythic'
       ? [sparkle(38, 100, 9), sparkle(366, 130, 7), sparkle(30, 350, 6), sparkle(372, 320, 9), sparkle(360, 66, 5)].join('\n')
       : '';
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${CARD_W}" height="${CARD_H}" viewBox="0 0 ${CARD_W} ${CARD_H}">
-  <defs>
-    <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+  const frameGradient = foil
+    ? `<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b388ff"/>
+      <stop offset="0.33" stop-color="#4dd0e1"/>
+      <stop offset="0.66" stop-color="#ffd54f"/>
+      <stop offset="1" stop-color="#ff80ab"/>
+    </linearGradient>`
+    : `<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${light}"/>
       <stop offset="1" stop-color="${dark}"/>
-    </linearGradient>
+    </linearGradient>`;
+
+  // Diagonal sheen stripes give foil cards a holographic shimmer.
+  const foilSheen = foil
+    ? `<g clip-path="url(#cardClip)" opacity="0.22">
+      <rect x="-260" y="-40" width="70" height="760" fill="#ffffff" transform="rotate(24 200 280)"/>
+      <rect x="-40" y="-40" width="34" height="760" fill="#ffffff" transform="rotate(24 200 280)"/>
+      <rect x="180" y="-40" width="52" height="760" fill="#ffffff" transform="rotate(24 200 280)"/>
+      <rect x="400" y="-40" width="26" height="760" fill="#ffffff" transform="rotate(24 200 280)"/>
+    </g>
+    ${sparkle(160, 505, 6)}
+    <text x="200" y="510" font-family="Finger Paint" font-size="13" fill="#ffffff" opacity="0.95" text-anchor="middle" letter-spacing="3">FOIL</text>
+    ${sparkle(240, 505, 6)}`
+    : '';
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${CARD_W}" height="${CARD_H}" viewBox="0 0 ${CARD_W} ${CARD_H}">
+  <defs>
+    ${frameGradient}
     <clipPath id="artClip"><rect x="20" y="80" width="360" height="310" rx="14"/></clipPath>
+    <clipPath id="cardClip"><rect width="${CARD_W}" height="${CARD_H}" rx="24"/></clipPath>
   </defs>
 
   <rect width="${CARD_W}" height="${CARD_H}" rx="24" fill="url(#frame)"/>
@@ -131,18 +155,20 @@ function cardSvg(fruit) {
   <text x="262" y="454" font-family="Finger Paint" font-weight="700" font-size="14" fill="#ffffff" opacity="0.75">HP</text>
   <text x="262" y="482" font-family="Finger Paint" font-weight="800" font-size="30" fill="#ffffff">${fruit.hp}</text>
 
+  ${foilSheen}
   ${legendarySparkles}
   ${flavorSvg}
 </svg>`;
 }
 
 // Render a single card to PNG. Cached in memory and on disk.
-async function renderCard(fruitId) {
-  if (memoryCache.has(fruitId)) return memoryCache.get(fruitId);
+async function renderCard(fruitId, variant = 'normal') {
+  const cacheKey = `${fruitId}-${variant}`;
+  if (memoryCache.has(cacheKey)) return memoryCache.get(cacheKey);
   const fruit = getFruit(fruitId);
   if (!fruit) throw new Error(`Unknown fruit: ${fruitId}`);
 
-  const diskPath = path.join(CACHE_DIR, 'cards', `${fruitId}.png`);
+  const diskPath = path.join(CACHE_DIR, 'cards', `${cacheKey}.png`);
   let buf;
   if (fs.existsSync(diskPath)) {
     buf = fs.readFileSync(diskPath);
@@ -152,28 +178,30 @@ async function renderCard(fruitId) {
       .resize(310, 310, { fit: 'contain', background: '#ffffff' })
       .png()
       .toBuffer();
-    buf = await sharp(Buffer.from(cardSvg(fruit)))
+    buf = await sharp(Buffer.from(cardSvg(fruit, variant)))
       .composite([{ input: photo, left: 45, top: 80 }])
       .png()
       .toBuffer();
     fs.mkdirSync(path.dirname(diskPath), { recursive: true });
     fs.writeFileSync(diskPath, buf);
   }
-  memoryCache.set(fruitId, buf);
+  memoryCache.set(cacheKey, buf);
   return buf;
 }
 
 // Five cards side by side — the pack opening image.
-async function renderPackSpread(fruitIds) {
+// items: [{ id, variant }] (plain fruit-id strings also accepted).
+async function renderPackSpread(items) {
+  const norm = items.map((it) => (typeof it === 'string' ? { id: it, variant: 'normal' } : it));
   const scale = 0.5;
   const w = Math.round(CARD_W * scale);
   const h = Math.round(CARD_H * scale);
   const gap = 14;
   const pad = 22;
-  const totalW = pad * 2 + w * fruitIds.length + gap * (fruitIds.length - 1);
+  const totalW = pad * 2 + w * norm.length + gap * (norm.length - 1);
   const totalH = pad * 2 + h;
 
-  const cards = await Promise.all(fruitIds.map((id) => renderCard(id)));
+  const cards = await Promise.all(norm.map((it) => renderCard(it.id, it.variant)));
   const composites = [];
   for (let i = 0; i < cards.length; i++) {
     const resized = await sharp(cards[i]).resize(w, h).png().toBuffer();

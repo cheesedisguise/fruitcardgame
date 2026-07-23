@@ -1,12 +1,15 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { Client, GatewayIntentBits, Events } = require('discord.js');
+const { Client, GatewayIntentBits, Events, EmbedBuilder } = require('discord.js');
 
+const config = require('./config');
 const db = require('./db');
 const render = require('./render');
 const { BattleManager } = require('./battle');
 const { Matchmaking } = require('./matchmaking');
+const { setEmojiClient, remoji, variantLabel, coins } = require('./util');
+const { getFruit } = require('./fruits');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -23,7 +26,7 @@ for (const file of fs.readdirSync(path.join(__dirname, 'commands'))) {
 
 const battles = new BattleManager(db, render);
 const matchmaking = new Matchmaking(battles);
-const ctx = { client, db, render, battles, matchmaking, commands };
+const ctx = { client, config, db, render, battles, matchmaking, commands };
 
 // Light anti-spam: one command per user per 1.2s.
 const cooldowns = new Map();
@@ -62,15 +65,47 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await battles.handleComponent(interaction);
     } else if (interaction.customId.startsWith('col:')) {
       await commands.get('fcollection').handleComponent(interaction, ctx);
+    } else if (interaction.customId.startsWith('trade:')) {
+      await commands.get('ftrade').handleComponent(interaction, ctx);
     }
   } catch (err) {
     console.error('Interaction error:', err);
   }
 });
 
+// Settle finished auctions and announce results where they were listed.
+async function sweepAuctions() {
+  let settled;
+  try {
+    settled = await db.settleDueAuctions();
+  } catch (err) {
+    console.error('auction sweep error:', err);
+    return;
+  }
+  for (const auction of settled) {
+    if (!auction.channel_id) continue;
+    const channel = await client.channels.fetch(auction.channel_id).catch(() => null);
+    if (!channel) continue;
+    const fruit = getFruit(auction.fruit_id);
+    const cardName = `${remoji(fruit.rarity)} **${fruit.name}${variantLabel(auction.variant)}**`;
+    const embed = new EmbedBuilder()
+      .setColor(auction.bidder_id ? 0x2ecc71 : 0x95a5a6)
+      .setTitle('🔨 Auction Ended')
+      .setDescription(
+        auction.bidder_id
+          ? `${cardName} sold to <@${auction.bidder_id}> for ${coins(auction.current_bid)}! <@${auction.seller_id}> has been paid.`
+          : `${cardName} received no bids — returned to <@${auction.seller_id}>.`
+      )
+      .setFooter({ text: `Auction #${auction.id}` });
+    await channel.send({ embeds: [embed] }).catch(() => {});
+  }
+}
+
 client.once(Events.ClientReady, (c) => {
   console.log(`🍎 FruitCards is ready! Logged in as ${c.user.tag} in ${c.guilds.cache.size} server(s).`);
   c.user.setActivity('fhelp · collecting fruit');
+  setEmojiClient(c); // use custom :common:/:rare:/... emojis when available
+  setInterval(() => sweepAuctions().catch(() => {}), config.AUCTION_SWEEP_INTERVAL_MS);
 });
 
 async function main() {

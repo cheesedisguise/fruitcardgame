@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
+const { FRUITS } = require('../fruits');
 const { coins } = require('../util');
 
 module.exports = {
@@ -20,13 +21,14 @@ module.exports = {
           ? `Your account is ready — you start with ${coins(config.STARTING_BALANCE)}!\n\n`
           : `You already have an account, ${message.author.displayName}!\n\n`) +
           `**How to play:**\n` +
-          `🪙 \`fdaily\` — claim free coins every day\n` +
-          `📦 \`fbuy\` then \`fopen\` — buy packs (${config.PACK_PRICE} ${config.CURRENCY_EMOJI}) and open them: **${config.PACK_SIZE} fruit cards** each!\n` +
-          `🃏 \`fcards\` — view your collection · \`fcard apple\` — inspect a card\n` +
-          `⚔️ \`fbattle @friend\` — duel a friend, or \`fqueue\` — cross-server matchmaking! Battles happen in private threads\n` +
-          `💰 \`fsell\` duplicates · \`ftop\` — leaderboard · \`fhelp\` — all commands`
+          `🪙 \`fdaily\` + \`fdrop\` — free coins (daily streaks & 2-min drop chains)\n` +
+          `📦 \`fbuy\` then \`fopen\` — packs hold **5 cards** each; fancier packs = better odds & ✨ foils\n` +
+          `🃏 \`fcards\` · \`fcard apple\` · \`fdex\` — browse your collection\n` +
+          `⚔️ \`fbattle @friend\` or \`fqueue\` — draft a team of ${config.TEAM_SIZE}, manage your ⚡ power, use abilities!\n` +
+          `🤝 \`ftrade\` · 🏛️ \`fauction\` — trade and auction cards across servers\n` +
+          `💰 \`fsell\` duplicates · \`ftop\` — leaderboard · \`fhelp\` — everything else`
       )
-      .setFooter({ text: 'Collect all 30 fruits — the Apple 🌟 is the rarest of them all' });
+      .setFooter({ text: `Collect all ${FRUITS.length} fruits — the Apple 🌟 is the rarest of them all` });
     await message.reply({ embeds: [embed] });
   },
 };
