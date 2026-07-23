@@ -244,4 +244,100 @@ async function renderBattle(fruitIdA, fruitIdB) {
     .toBuffer();
 }
 
-module.exports = { renderCard, renderPackSpread, renderBattle, cardSvg };
+// ── Pack art ───────────────────────────────────────────────────────
+const PACK_ART = {
+  standard: { colors: ['#81c784', '#1b5e20'], hero: 'orange' },
+  juicy: { colors: ['#ff8a80', '#b71c1c'], hero: 'watermelon' },
+  exotic: { colors: ['#ce93d8', '#4a148c'], hero: 'dragonfruit' },
+};
+const PACK_W = 300;
+const PACK_H = 420;
+
+function packSvg(pack) {
+  const art = PACK_ART[pack.id] || PACK_ART.standard;
+  const [light, dark] = art.colors;
+  // top crimp zigzag
+  let zigzag = '';
+  for (let x = 0; x < PACK_W; x += 30) {
+    zigzag += `${x},26 ${x + 15},8 `;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${PACK_W}" height="${PACK_H}">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${light}"/>
+      <stop offset="1" stop-color="${dark}"/>
+    </linearGradient>
+    <clipPath id="pouch"><rect x="0" y="14" width="${PACK_W}" height="${PACK_H - 14}" rx="22"/></clipPath>
+  </defs>
+  <rect x="0" y="14" width="${PACK_W}" height="${PACK_H - 14}" rx="22" fill="url(#bg)"/>
+  <polygon points="0,26 ${zigzag}${PACK_W},26 ${PACK_W},40 0,40" fill="${dark}" opacity="0.55"/>
+  <g clip-path="url(#pouch)" opacity="0.16">
+    <rect x="-160" y="-20" width="60" height="520" fill="#ffffff" transform="rotate(20 150 210)"/>
+    <rect x="60" y="-20" width="26" height="520" fill="#ffffff" transform="rotate(20 150 210)"/>
+  </g>
+  <text x="${PACK_W / 2}" y="66" font-family="Finger Paint" font-size="21" fill="#ffffff" text-anchor="middle" letter-spacing="2">FRUITCARDS</text>
+  <circle cx="${PACK_W / 2}" cy="188" r="98" fill="#ffffff"/>
+  <circle cx="${PACK_W / 2}" cy="188" r="98" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="6"/>
+  <rect x="24" y="304" width="${PACK_W - 48}" height="46" rx="14" fill="#000000" opacity="0.3"/>
+  <text x="${PACK_W / 2}" y="335" font-family="Finger Paint" font-size="24" fill="#ffffff" text-anchor="middle">${pack.name}</text>
+  <rect x="${PACK_W / 2 - 62}" y="362" width="124" height="30" rx="15" fill="#ffffff" opacity="0.92"/>
+  <text x="${PACK_W / 2}" y="383" font-family="Finger Paint" font-size="16" fill="${dark}" text-anchor="middle">${pack.size} CARDS</text>
+</svg>`;
+}
+
+async function renderPackArt(packId) {
+  const config = require('./config');
+  const pack = config.PACKS[packId];
+  if (!pack) throw new Error(`Unknown pack: ${packId}`);
+  const cacheKey = `pack-${packId}`;
+  if (memoryCache.has(cacheKey)) return memoryCache.get(cacheKey);
+  const diskPath = path.join(CACHE_DIR, 'cards', `${cacheKey}.png`);
+  let buf;
+  if (fs.existsSync(diskPath)) {
+    buf = fs.readFileSync(diskPath);
+  } else {
+    const hero = (PACK_ART[packId] || PACK_ART.standard).hero;
+    const circleMask = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="168" height="168"><circle cx="84" cy="84" r="84" fill="#fff"/></svg>`
+    );
+    const photo = await sharp(artPath(hero))
+      .resize(168, 168, { fit: 'contain', background: '#ffffff' })
+      .composite([{ input: circleMask, blend: 'dest-in' }])
+      .png()
+      .toBuffer();
+    buf = await sharp(Buffer.from(packSvg(pack)))
+      .composite([{ input: photo, left: Math.round(PACK_W / 2 - 84), top: 188 - 84 }])
+      .png()
+      .toBuffer();
+    fs.mkdirSync(path.dirname(diskPath), { recursive: true });
+    fs.writeFileSync(diskPath, buf);
+  }
+  memoryCache.set(cacheKey, buf);
+  return buf;
+}
+
+// The three packs side by side — the shop window.
+async function renderShopBanner() {
+  const config = require('./config');
+  const cacheKey = 'shop-banner';
+  if (memoryCache.has(cacheKey)) return memoryCache.get(cacheKey);
+  const ids = Object.keys(config.PACKS);
+  const gap = 26;
+  const pad = 30;
+  const totalW = pad * 2 + PACK_W * ids.length + gap * (ids.length - 1);
+  const totalH = pad * 2 + PACK_H;
+  const composites = [];
+  for (let i = 0; i < ids.length; i++) {
+    composites.push({ input: await renderPackArt(ids[i]), left: pad + i * (PACK_W + gap), top: pad });
+  }
+  const buf = await sharp({
+    create: { width: totalW, height: totalH, channels: 4, background: '#ffffff' },
+  })
+    .composite(composites)
+    .png()
+    .toBuffer();
+  memoryCache.set(cacheKey, buf);
+  return buf;
+}
+
+module.exports = { renderCard, renderPackSpread, renderBattle, renderPackArt, renderShopBanner, cardSvg };

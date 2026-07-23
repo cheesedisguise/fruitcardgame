@@ -6,6 +6,7 @@ const { Client, GatewayIntentBits, Events, EmbedBuilder } = require('discord.js'
 const config = require('./config');
 const db = require('./db');
 const render = require('./render');
+const ui = require('./ui');
 const { BattleManager } = require('./battle');
 const { Matchmaking } = require('./matchmaking');
 const { setEmojiClient, remoji, variantLabel, coins } = require('./util');
@@ -59,10 +60,16 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isButton() && !interaction.isStringSelectMenu()) return;
   try {
+    if (interaction.isModalSubmit()) {
+      if (interaction.customId.startsWith('ui:')) await ui.handleModal(interaction, ctx);
+      return;
+    }
+    if (!interaction.isButton() && !interaction.isStringSelectMenu()) return;
     if (interaction.customId.startsWith('battle:')) {
       await battles.handleComponent(interaction);
+    } else if (interaction.customId.startsWith('ui:')) {
+      await ui.handleComponent(interaction, ctx);
     } else if (interaction.customId.startsWith('col:')) {
       await commands.get('fcollection').handleComponent(interaction, ctx);
     } else if (interaction.customId.startsWith('trade:')) {

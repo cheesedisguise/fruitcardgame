@@ -20,10 +20,10 @@ module.exports = {
         (isNew
           ? `Your account is ready — you start with ${coins(config.STARTING_BALANCE)}!\n\n`
           : `You already have an account, ${message.author.displayName}!\n\n`) +
-          `**How to play:**\n` +
+          `**▶️ Type \`fmenu\` to open the FruitCards app** — shop, packs, collection, auctions, all with buttons!\n\n` +
+          `Or play by command:\n` +
           `🪙 \`fdaily\` + \`fdrop\` — free coins (daily streaks & 2-min drop chains)\n` +
           `📦 \`fbuy\` then \`fopen\` — packs hold **5 cards** each; fancier packs = better odds & ✨ foils\n` +
-          `🃏 \`fcards\` · \`fcard apple\` · \`fdex\` — browse your collection\n` +
           `⚔️ \`fbattle @friend\` or \`fqueue\` — draft a team of ${config.TEAM_SIZE}, manage your ⚡ power, use abilities!\n` +
           `🤝 \`ftrade\` · 🏛️ \`fauction\` — trade and auction cards across servers\n` +
           `💰 \`fsell\` duplicates · \`ftop\` — leaderboard · \`fhelp\` — everything else`

@@ -11,12 +11,21 @@ Collect all 37 fruits, open packs, trade, auction, and battle across servers!
 - ⚔️ **Team battles in private threads** — draft a team of 3, gain 1⚡ power per turn, spend it on **Attack / Block / per-fruit Abilities / Switch / Charge**. Challenge friends (`fbattle`) or use **cross-server matchmaking** (`fqueue`); cross-server matches sync one private thread per player, and threads self-delete when the match ends
 - 🤝 **Trading** and a 🏛️ **cross-server auction house** with escrowed bids
 
+## The app
+
+Type **`fmenu`** for the full button-driven GUI — a single message that
+navigates like an app: 🏪 shop with pack art and one-click buying, 📦 pack
+opening with instant reveals, 🃏 collection browser with a card inspector
+(normal/foil views), 🏛️ auction house with bid pop-ups, plus daily/drop
+claims and matchmaking, all without typing a command.
+
 ## Commands
 
-Just type them in chat — no slash needed:
+Everything also works as plain text commands:
 
 | Command | What it does |
 |---|---|
+| `fmenu` | **Open the FruitCards app (GUI for everything)** |
 | `fstart` | Create your account & learn the ropes |
 | `fdaily` | Claim daily coins (🔥 streak bonus) |
 | `fdrop` | Coin drop every 2 min — 50% chance to chain +10 infinitely |
@@ -94,10 +103,12 @@ Regenerate the images anytime with `node scripts/make-emoji.js`.
 ```
 src/
   index.js       entrypoint — commands, components, auction sweeper
+  ui.js          the fmenu app: screens, navigation, bid modals
+  economy.js     shared claim/buy/open logic (commands + GUI)
   fruits.js      the card catalog (stats, rarities, abilities, fruit facts)
   config.js      economy, packs & battle tuning knobs
   db.js          Postgres layer (auto-migrating schema, trades, auctions)
-  render.js      card compositing: photo + frame + foil effects (sharp)
+  render.js      card compositing: photo + frame + foil + pack art (sharp)
   battle.js      team battle engine (power, abilities, synced thread views)
   matchmaking.js cross-server matchmaking queue
   commands/      one file per command

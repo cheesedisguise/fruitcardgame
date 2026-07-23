@@ -1,6 +1,7 @@
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { RARITIES } = require('../fruits');
-const { rollPack, coins, findPack, remoji, variantLabel } = require('../util');
+const { findPack, remoji, variantLabel } = require('../util');
+const economy = require('../economy');
 const config = require('../config');
 
 module.exports = {
@@ -14,46 +15,12 @@ module.exports = {
       return message.reply(`❓ Unknown pack "${args[0]}". Check \`fshop\`.`);
     }
 
-    const result = await ctx.db.withPlayerLock(message.author.id, async (client, player) => {
-      const { rows: owned } = await client.query(
-        `SELECT pack_id, quantity FROM packs WHERE user_id = $1 AND quantity > 0 FOR UPDATE`,
-        [message.author.id]
-      );
-      if (owned.length === 0) return { ok: false, reason: 'none' };
-
-      let packRow;
-      if (requested) {
-        packRow = owned.find((r) => r.pack_id === requested.id);
-        if (!packRow) return { ok: false, reason: 'notype', pack: requested };
-      } else {
-        // Default: standard first, then whatever they have.
-        packRow = owned.find((r) => r.pack_id === 'standard') || owned[0];
-      }
-      const pack = config.PACKS[packRow.pack_id] || config.PACKS.standard;
-
-      const cards = rollPack(pack);
-      const { rows } = await client.query(
-        `SELECT DISTINCT fruit_id FROM collections WHERE user_id = $1 AND quantity > 0 AND fruit_id = ANY($2)`,
-        [message.author.id, cards.map((c) => c.fruit.id)]
-      );
-      const ownedBefore = new Set(rows.map((r) => r.fruit_id));
-      await client.query(
-        `UPDATE packs SET quantity = quantity - 1 WHERE user_id = $1 AND pack_id = $2`,
-        [message.author.id, packRow.pack_id]
-      );
-      await client.query(
-        `UPDATE players SET packs_opened = packs_opened + 1 WHERE user_id = $1`,
-        [message.author.id]
-      );
-      await ctx.db.addCards(client, message.author.id, cards.map((c) => ({ id: c.fruit.id, variant: c.variant })));
-      return { ok: true, pack, cards, ownedBefore, packsLeft: packRow.quantity - 1 };
-    });
-
+    const result = await economy.openPack(ctx.db, message.author.id, requested);
     if (!result.ok) {
       if (result.reason === 'notype') {
         return message.reply(`❌ You don't have any ${result.pack.emoji} **${result.pack.name}**s! Buy one: \`fbuy ${result.pack.id}\``);
       }
-      return message.reply(`❌ You have no unopened packs! Grab one with \`fbuy\` (${config.PACKS.standard.price} ${config.CURRENCY_EMOJI}).`);
+      return message.reply(`❌ You have no unopened packs! Grab one with \`fbuy\` (${config.PACKS.standard.price} ${config.CURRENCY_EMOJI}) or \`fmenu\`.`);
     }
 
     const opening = await message.reply(`${result.pack.emoji} *Ripping open the ${result.pack.name}...*`);

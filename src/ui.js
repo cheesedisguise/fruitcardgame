@@ -1,0 +1,501 @@
+// The FruitCards app GUI. One message navigates between screens
+// (home / shop / packs / collection / card / auctions / daily / drop / dex)
+// via buttons, select menus, and modals. Opened with fmenu; every control is
+// locked to the user who opened it.
+//
+// customId layout: ui:<action>:<a>:<b>:<ownerId>
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  StringSelectMenuBuilder,
+  AttachmentBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+} = require('discord.js');
+const config = require('./config');
+const economy = require('./economy');
+const { FRUITS, RARITIES, getFruit } = require('./fruits');
+const { ABILITIES } = require('./battle');
+const { coins, remoji, sortByRarity, sellValue, variantLabel, timeUntil } = require('./util');
+
+const BRAND_COLOR = 0x66bb6a;
+const PAGE_SIZE = 10;
+
+function cid(action, a = '', b = '', owner = '') {
+  return `ui:${action}:${a}:${b}:${owner}`;
+}
+
+function btn(action, a, b, owner, label, style = ButtonStyle.Secondary, emoji = null, disabled = false) {
+  const builder = new ButtonBuilder().setCustomId(cid(action, a, b, owner)).setLabel(label).setStyle(style).setDisabled(disabled);
+  if (emoji) builder.setEmoji(emoji);
+  return builder;
+}
+
+function backRow(owner, extra = []) {
+  return new ActionRowBuilder().addComponents(...extra, btn('home', '', '', owner, 'Home', ButtonStyle.Secondary, '🏠'));
+}
+
+// ── Screens ────────────────────────────────────────────────────────
+
+async function homeScreen(ctx, user) {
+  const player = await ctx.db.getPlayer(user.id);
+  const dexCount = await ctx.db.countDistinctFruits(user.id);
+  const packs = await ctx.db.getPacks(user.id);
+  const packText =
+    packs.length > 0
+      ? packs.map((p) => `${config.PACKS[p.pack_id]?.emoji || '📦'} ${p.quantity}`).join(' · ')
+      : 'none — visit the shop!';
+  const inQueue = ctx.matchmaking.queue.has(user.id);
+
+  const embed = new EmbedBuilder()
+    .setColor(BRAND_COLOR)
+    .setTitle('🍎 FruitCards')
+    .setThumbnail(user.displayAvatarURL())
+    .setDescription(
+      `Welcome back, **${user.displayName}**!` + (inQueue ? '\n🔎 *Matchmaking: searching for an opponent...*' : '')
+    )
+    .addFields(
+      { name: 'Balance', value: coins(player.balance), inline: true },
+      { name: 'Packs', value: packText, inline: true },
+      { name: 'FruitDex', value: `📖 ${dexCount}/${FRUITS.length}`, inline: true },
+      { name: 'Record', value: `🏆 ${player.wins}W · 💀 ${player.losses}L`, inline: true },
+      { name: 'Streak', value: `🔥 ${player.daily_streak} days`, inline: true },
+      { name: 'Opened', value: `✨ ${player.packs_opened} packs`, inline: true }
+    )
+    .setFooter({ text: 'Battles: fbattle @friend · trades: ftrade · this menu: fmenu' });
+
+  return {
+    embeds: [embed],
+    files: [],
+    components: [
+      new ActionRowBuilder().addComponents(
+        btn('shop', '', '', user.id, 'Shop', ButtonStyle.Success, '🏪'),
+        btn('packs', '', '', user.id, 'Open Packs', ButtonStyle.Primary, '📦'),
+        btn('col', '1', '', user.id, 'Collection', ButtonStyle.Primary, '🃏'),
+        btn('auc', '', '', user.id, 'Auctions', ButtonStyle.Secondary, '🏛️')
+      ),
+      new ActionRowBuilder().addComponents(
+        btn('daily', '', '', user.id, 'Daily', ButtonStyle.Secondary, '🪙'),
+        btn('drop', '', '', user.id, 'Drop', ButtonStyle.Secondary, '💧'),
+        btn('queue', '', '', user.id, inQueue ? 'Leave Queue' : 'Find Battle', inQueue ? ButtonStyle.Danger : ButtonStyle.Success, '⚔️'),
+        btn('dex', '', '', user.id, 'FruitDex', ButtonStyle.Secondary, '📖')
+      ),
+    ],
+  };
+}
+
+async function shopScreen(ctx, user, note = null) {
+  const player = await ctx.db.getPlayer(user.id);
+  const packs = await ctx.db.getPacks(user.id);
+  const ownedOf = (id) => packs.find((p) => p.pack_id === id)?.quantity || 0;
+
+  const banner = await ctx.render.renderShopBanner();
+  const embed = new EmbedBuilder()
+    .setColor(0xe67e22)
+    .setTitle('🏪 The Fruit Stand')
+    .setDescription((note ? `${note}\n\n` : '') + `Your balance: ${coins(player.balance)}`)
+    .setImage('attachment://shop.png');
+  for (const pack of Object.values(config.PACKS)) {
+    const odds = Object.entries(pack.odds)
+      .filter(([, w]) => w > 0)
+      .map(([rarity, w]) => `${remoji(rarity)} ${(w / 10).toFixed(w % 10 === 0 ? 0 : 1)}%`)
+      .join(' ');
+    embed.addFields({
+      name: `${pack.emoji} ${pack.name} — ${pack.price} ${config.CURRENCY_EMOJI} (you own ${ownedOf(pack.id)})`,
+      value: `${odds}\nGuaranteed **${RARITIES[pack.pity].name}+** · ✨ foil ${Math.round(pack.foilChance * 100)}%`,
+    });
+  }
+
+  return {
+    embeds: [embed],
+    files: [new AttachmentBuilder(banner, { name: 'shop.png' })],
+    components: [
+      new ActionRowBuilder().addComponents(
+        ...Object.values(config.PACKS).map((pack) =>
+          btn('buy', pack.id, '', user.id, `Buy ${pack.name}`, ButtonStyle.Success, pack.emoji, Number(player.balance) < pack.price)
+        )
+      ),
+      backRow(user.id),
+    ],
+  };
+}
+
+async function packsScreen(ctx, user, note = null) {
+  const packs = await ctx.db.getPacks(user.id);
+  const lines = Object.values(config.PACKS).map((pack) => {
+    const owned = packs.find((p) => p.pack_id === pack.id)?.quantity || 0;
+    return `${pack.emoji} **${pack.name}** — you own **${owned}**`;
+  });
+  const embed = new EmbedBuilder()
+    .setColor(0x3498db)
+    .setTitle('📦 Your Packs')
+    .setDescription((note ? `${note}\n\n` : '') + lines.join('\n') + '\n\nPick one to rip open!');
+
+  const buttons = Object.values(config.PACKS).map((pack) => {
+    const owned = packs.find((p) => p.pack_id === pack.id)?.quantity || 0;
+    return btn('open', pack.id, '', user.id, `Open ${pack.name}`, ButtonStyle.Primary, pack.emoji, owned === 0);
+  });
+  return {
+    embeds: [embed],
+    files: [],
+    components: [new ActionRowBuilder().addComponents(...buttons), backRow(user.id, [btn('shop', '', '', user.id, 'Shop', ButtonStyle.Success, '🏪')])],
+  };
+}
+
+async function openScreen(ctx, user, packId) {
+  const pack = config.PACKS[packId];
+  const result = await economy.openPack(ctx.db, user.id, pack || null);
+  if (!result.ok) {
+    const note = result.reason === 'notype' ? `❌ You don't have any ${result.pack.name}s!` : '❌ No packs to open — grab one in the shop!';
+    return packsScreen(ctx, user, note);
+  }
+
+  const image = await ctx.render.renderPackSpread(result.cards.map((c) => ({ id: c.fruit.id, variant: c.variant })));
+  const seen = new Set();
+  const lines = result.cards.map((c) => {
+    const isNew = !result.ownedBefore.has(c.fruit.id) && !seen.has(c.fruit.id);
+    seen.add(c.fruit.id);
+    return `${remoji(c.fruit.rarity)} **${c.fruit.name}**${variantLabel(c.variant)} · ATK ${c.fruit.atk} / HP ${c.fruit.hp}${isNew ? ' 🆕' : ''}`;
+  });
+  const rarityKeys = Object.keys(RARITIES);
+  const best = result.cards.reduce((a, b) =>
+    rarityKeys.indexOf(b.fruit.rarity) > rarityKeys.indexOf(a.fruit.rarity) ? b : a
+  );
+
+  const embed = new EmbedBuilder()
+    .setColor(RARITIES[best.fruit.rarity].color)
+    .setTitle(`✨ ${result.pack.name} Opened!`)
+    .setDescription(lines.join('\n'))
+    .setImage('attachment://pack.png')
+    .setFooter({ text: `${result.packsLeft} ${result.pack.name}(s) left` });
+
+  return {
+    embeds: [embed],
+    files: [new AttachmentBuilder(image, { name: 'pack.png' })],
+    components: [
+      new ActionRowBuilder().addComponents(
+        btn('open', result.pack.id, '', user.id, `Open another (${result.packsLeft} left)`, ButtonStyle.Primary, result.pack.emoji, result.packsLeft === 0),
+        btn('shop', '', '', user.id, 'Shop', ButtonStyle.Success, '🏪')
+      ),
+      backRow(user.id, [btn('col', '1', '', user.id, 'Collection', ButtonStyle.Secondary, '🃏')]),
+    ],
+  };
+}
+
+async function collectionScreen(ctx, user, page) {
+  const rows = await ctx.db.getCollectionDetailed(user.id);
+  const owned = rows
+    .map((r) => ({ fruit: getFruit(r.fruit_id), variant: r.variant, qty: r.quantity }))
+    .filter((o) => o.fruit)
+    .sort((a, b) => {
+      const r = sortByRarity(a.fruit, b.fruit);
+      if (r !== 0) return r;
+      return a.variant === b.variant ? 0 : a.variant === 'foil' ? -1 : 1;
+    });
+  const distinct = new Set(owned.map((o) => o.fruit.id)).size;
+  const pages = Math.max(1, Math.ceil(owned.length / PAGE_SIZE));
+  const p = Math.min(Math.max(1, page), pages);
+  const slice = owned.slice((p - 1) * PAGE_SIZE, p * PAGE_SIZE);
+
+  const lines =
+    slice.length > 0
+      ? slice.map(
+          (o) => `${remoji(o.fruit.rarity)} **${o.fruit.name}**${variantLabel(o.variant)} ×${o.qty} · ATK ${o.fruit.atk} / HP ${o.fruit.hp}`
+        )
+      : ['*No cards yet — hit the shop and rip some packs!*'];
+
+  const embed = new EmbedBuilder()
+    .setColor(0x9b59b6)
+    .setTitle(`🃏 ${user.displayName}'s Collection`)
+    .setDescription(lines.join('\n'))
+    .setFooter({ text: `Page ${p}/${pages} · ${distinct}/${FRUITS.length} unique fruits · pick a card below to inspect it` });
+
+  const components = [];
+  if (slice.length > 0) {
+    components.push(
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(cid('colsel', p, '', user.id))
+          .setPlaceholder('🔍 Inspect a card...')
+          .addOptions(
+            slice.map((o) => ({
+              label: `${o.fruit.name}${o.variant === 'foil' ? ' (FOIL)' : ''}`,
+              description: `${RARITIES[o.fruit.rarity].name} · ×${o.qty}`,
+              value: `${o.fruit.id}|${o.variant}|${p}`,
+              emoji: remoji(o.fruit.rarity),
+            }))
+          )
+      )
+    );
+  }
+  components.push(
+    new ActionRowBuilder().addComponents(
+      btn('col', p - 1, '', user.id, '◀', ButtonStyle.Secondary, null, p <= 1),
+      btn('col', p + 1, '', user.id, '▶', ButtonStyle.Secondary, null, p >= pages),
+      btn('home', '', '', user.id, 'Home', ButtonStyle.Secondary, '🏠')
+    )
+  );
+  return { embeds: [embed], files: [], components };
+}
+
+async function cardScreen(ctx, user, fruitId, variant, page) {
+  const fruit = getFruit(fruitId);
+  if (!fruit) return collectionScreen(ctx, user, 1);
+  const { rows } = await ctx.db.pool.query(
+    `SELECT variant, quantity FROM collections WHERE user_id = $1 AND fruit_id = $2 AND quantity > 0`,
+    [user.id, fruit.id]
+  );
+  const normalOwned = rows.find((r) => r.variant === 'normal')?.quantity || 0;
+  const foilOwned = rows.find((r) => r.variant === 'foil')?.quantity || 0;
+  const rarity = RARITIES[fruit.rarity];
+  const ability = ABILITIES[fruit.ability];
+  const image = await ctx.render.renderCard(fruit.id, variant);
+
+  const embed = new EmbedBuilder()
+    .setColor(rarity.color)
+    .setTitle(`${remoji(fruit.rarity)} ${fruit.name}${variant === 'foil' ? ' ✨FOIL' : ''}`)
+    .setDescription(`*${fruit.flavor}*`)
+    .addFields(
+      { name: 'Rarity', value: rarity.name, inline: true },
+      { name: 'ATK', value: `⚔️ ${fruit.atk}`, inline: true },
+      { name: 'HP', value: `❤️ ${fruit.hp}`, inline: true },
+      { name: `${ability.emoji} ${ability.name} (${config.ABILITY_COST}⚡)`, value: ability.desc, inline: false },
+      { name: 'You own', value: `🃏 ${normalOwned} · ✨ ${foilOwned}`, inline: true },
+      { name: 'Sell value', value: `${sellValue(fruit, variant)} 🪙`, inline: true }
+    )
+    .setImage('attachment://card.png');
+
+  const other = variant === 'foil' ? 'normal' : 'foil';
+  return {
+    embeds: [embed],
+    files: [new AttachmentBuilder(image, { name: 'card.png' })],
+    components: [
+      new ActionRowBuilder().addComponents(
+        btn('col', page || 1, '', user.id, 'Collection', ButtonStyle.Secondary, '🃏'),
+        btn('card', fruitId, `${other}|${page || 1}`, user.id, other === 'foil' ? 'View Foil' : 'View Normal', ButtonStyle.Primary, '✨'),
+        btn('home', '', '', user.id, 'Home', ButtonStyle.Secondary, '🏠')
+      ),
+    ],
+  };
+}
+
+async function auctionScreen(ctx, user, note = null) {
+  const open = await ctx.db.listOpenAuctions(15);
+  const fauction = require('./commands/fauction');
+  const embed = new EmbedBuilder()
+    .setColor(0xd35400)
+    .setTitle('🏛️ Auction House')
+    .setDescription(
+      (note ? `${note}\n\n` : '') +
+        (open.length > 0
+          ? open.map(fauction.describeAuction).join('\n')
+          : '*No open auctions. List one with* `fauction <fruit> [foil] [minBid]`')
+    )
+    .setFooter({ text: 'Cross-server · bids are escrowed and refunded if outbid' });
+
+  const components = [];
+  if (open.length > 0) {
+    components.push(
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(cid('aucsel', '', '', user.id))
+          .setPlaceholder('🔨 Bid on an auction...')
+          .addOptions(
+            open.map((a) => {
+              const fruit = getFruit(a.fruit_id);
+              return {
+                label: `#${a.id} ${fruit.name}${a.variant === 'foil' ? ' (FOIL)' : ''}`,
+                description: a.current_bid ? `Current bid ${a.current_bid}` : `Starting at ${a.min_bid}`,
+                value: String(a.id),
+                emoji: remoji(fruit.rarity),
+              };
+            })
+          )
+      )
+    );
+  }
+  components.push(backRow(user.id, [btn('auc', '', '', user.id, 'Refresh', ButtonStyle.Secondary, '🔄')]));
+  return { embeds: [embed], files: [], components };
+}
+
+async function dailyScreen(ctx, user) {
+  const result = await economy.claimDaily(ctx.db, user.id);
+  const embed = result.claimed
+    ? new EmbedBuilder()
+        .setColor(0x2ecc71)
+        .setTitle('🪙 Daily Claimed!')
+        .setDescription(
+          `You received ${coins(result.amount)}${result.bonus > 0 ? ` *(🔥 streak bonus +${result.bonus})*` : ''}\n` +
+            `🔥 Streak: **${result.streak}** · 💰 Balance: ${coins(result.balance)}`
+        )
+    : new EmbedBuilder()
+        .setColor(0x95a5a6)
+        .setTitle('🪙 Daily')
+        .setDescription(`⏰ Already claimed! Come back in **${timeUntil(result.wait)}**.`);
+  return { embeds: [embed], files: [], components: [backRow(user.id, [btn('drop', '', '', user.id, 'Try a Drop', ButtonStyle.Secondary, '💧')])] };
+}
+
+async function dropScreen(ctx, user) {
+  const result = await economy.claimDrop(ctx.db, user.id);
+  let embed;
+  if (!result.claimed) {
+    const secs = Math.ceil(result.wait / 1000);
+    const wait = secs >= 60 ? `${Math.floor(secs / 60)}m ${secs % 60}s` : `${secs}s`;
+    embed = new EmbedBuilder().setColor(0x95a5a6).setTitle('💧 Coin Drop').setDescription(`⏰ Next drop lands in **${wait}**!`);
+  } else {
+    const chainDisplay = result.chain <= 10 ? '🪙'.repeat(result.chain) : `🪙×${result.chain}`;
+    const hype = result.chain >= 6 ? '🎰 **JACKPOT CHAIN!**' : result.chain >= 3 ? '🍀 **Lucky chain!**' : '';
+    embed = new EmbedBuilder()
+      .setColor(result.chain >= 3 ? 0xf1c40f : 0x2ecc71)
+      .setTitle('💧 Coin Drop!')
+      .setDescription(
+        `${chainDisplay}\n${hype ? hype + '\n' : ''}Chain hit **×${result.chain}** — you grabbed ${coins(result.amount)}\n💰 Balance: ${coins(result.balance)}`
+      )
+      .setFooter({ text: 'Every +10 has a 50% chance to keep chaining. Next drop in 2 minutes.' });
+  }
+  return { embeds: [embed], files: [], components: [backRow(user.id, [btn('drop', '', '', user.id, 'Drop again', ButtonStyle.Secondary, '💧')])] };
+}
+
+async function dexScreen(ctx, user) {
+  const rows = await ctx.db.getCollection(user.id);
+  const owned = new Map(rows.map((r) => [r.fruit_id, r.quantity]));
+  const embed = new EmbedBuilder()
+    .setColor(0x1abc9c)
+    .setTitle(`📖 ${user.displayName}'s FruitDex`)
+    .setDescription(`Discovered **${FRUITS.filter((f) => owned.has(f.id)).length}/${FRUITS.length}** fruits`);
+  for (const [key, rarity] of Object.entries(RARITIES)) {
+    const fruits = FRUITS.filter((f) => f.rarity === key);
+    embed.addFields({
+      name: `${remoji(key)} ${rarity.name}`,
+      value: fruits.map((f) => (owned.has(f.id) ? `✅ ${f.name} ×${owned.get(f.id)}` : `❌ ~~${f.name}~~`)).join('\n'),
+      inline: true,
+    });
+  }
+  return { embeds: [embed], files: [], components: [backRow(user.id)] };
+}
+
+// ── Router ─────────────────────────────────────────────────────────
+
+async function handleComponent(interaction, ctx) {
+  const [, action, a, b, ownerId] = interaction.customId.split(':');
+  if (interaction.user.id !== ownerId) {
+    return interaction.reply({ content: 'This menu belongs to someone else — open your own with `fmenu`!', ephemeral: true });
+  }
+  const user = interaction.user;
+
+  // The auction select opens a modal (no update yet).
+  if (action === 'aucsel') {
+    const auctionId = interaction.values[0];
+    const modal = new ModalBuilder()
+      .setCustomId(cid('bidmodal', auctionId, '', user.id))
+      .setTitle(`Bid on auction #${auctionId}`)
+      .addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('amount')
+            .setLabel('Your bid (coins)')
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder('e.g. 150')
+            .setRequired(true)
+            .setMaxLength(9)
+        )
+      );
+    return interaction.showModal(modal);
+  }
+
+  let payload;
+  if (action === 'home') payload = await homeScreen(ctx, user);
+  else if (action === 'shop') payload = await shopScreen(ctx, user);
+  else if (action === 'buy') {
+    const pack = config.PACKS[a];
+    const result = pack ? await economy.buyPacks(ctx.db, user.id, pack, 1) : { ok: false };
+    payload = await shopScreen(
+      ctx,
+      user,
+      result.ok
+        ? `✅ Bought a ${pack.emoji} **${pack.name}** — you now own **${result.owned}**!`
+        : `❌ Not enough coins for that pack!`
+    );
+  } else if (action === 'packs') payload = await packsScreen(ctx, user);
+  else if (action === 'open') payload = await openScreen(ctx, user, a);
+  else if (action === 'col') payload = await collectionScreen(ctx, user, parseInt(a, 10) || 1);
+  else if (action === 'colsel') {
+    const [fruitId, variant, page] = interaction.values[0].split('|');
+    payload = await cardScreen(ctx, user, fruitId, variant, parseInt(page, 10) || 1);
+  } else if (action === 'card') {
+    const [variant, page] = (b || 'normal|1').split('|');
+    payload = await cardScreen(ctx, user, a, variant || 'normal', parseInt(page, 10) || 1);
+  } else if (action === 'auc') payload = await auctionScreen(ctx, user);
+  else if (action === 'daily') payload = await dailyScreen(ctx, user);
+  else if (action === 'drop') payload = await dropScreen(ctx, user);
+  else if (action === 'dex') payload = await dexScreen(ctx, user);
+  else if (action === 'queue') {
+    if (ctx.matchmaking.queue.has(user.id)) {
+      ctx.matchmaking.remove(user.id);
+      payload = await homeScreen(ctx, user);
+      payload.embeds[0].setDescription(`Welcome back, **${user.displayName}**!\n👋 *Left the matchmaking queue.*`);
+    } else if (ctx.battles.inBattle(user.id)) {
+      payload = await homeScreen(ctx, user);
+      payload.embeds[0].setDescription(`Welcome back, **${user.displayName}**!\n⚔️ *You're already in a battle!*`);
+    } else {
+      const collection = await ctx.db.getCollection(user.id);
+      if (collection.length === 0) {
+        payload = await homeScreen(ctx, user);
+        payload.embeds[0].setDescription(`Welcome back, **${user.displayName}**!\n❌ *You need at least one card to battle — hit the shop!*`);
+      } else {
+        // Adapter so the queue can announce matches in this channel.
+        await ctx.matchmaking.join({
+          author: user,
+          channel: interaction.channel,
+          reply: (p) => interaction.channel.send(p),
+        });
+        payload = await homeScreen(ctx, user);
+      }
+    }
+  } else {
+    payload = await homeScreen(ctx, user);
+  }
+
+  await interaction.update({ ...payload, attachments: [] });
+}
+
+async function handleModal(interaction, ctx) {
+  const [, action, a, , ownerId] = interaction.customId.split(':');
+  if (action !== 'bidmodal' || interaction.user.id !== ownerId) return;
+  const auctionId = parseInt(a, 10);
+  const amount = parseInt(interaction.fields.getTextInputValue('amount').replace(/[^\d]/g, ''), 10);
+
+  let note;
+  if (!Number.isFinite(amount) || amount < 1) {
+    note = '❌ That bid wasn\'t a number!';
+  } else {
+    try {
+      const auction = await ctx.db.placeBid(auctionId, interaction.user.id, amount);
+      const fruit = getFruit(auction.fruit_id);
+      note = `🔨 You're the top bidder on **${fruit.name}${variantLabel(auction.variant)}** at ${coins(amount)}!`;
+    } catch (err) {
+      if (!err.friendly) throw err;
+      if (err.message.startsWith('too-low:')) note = `❌ Too low — minimum bid is **${err.message.split(':')[1]}** 🪙.`;
+      else
+        note =
+          {
+            'not-open': '❌ That auction is already over.',
+            ended: '❌ That auction just ended — too slow!',
+            'own-auction': "❌ You can't bid on your own auction!",
+            poor: "❌ You don't have that many coins!",
+          }[err.message] || '❌ That bid didn\'t go through.';
+    }
+  }
+
+  const payload = await auctionScreen(ctx, interaction.user, note);
+  if (interaction.isFromMessage()) {
+    await interaction.update({ ...payload, attachments: [] });
+  } else {
+    await interaction.reply({ ...payload, ephemeral: true });
+  }
+}
+
+module.exports = { handleComponent, handleModal, homeScreen, shopScreen };
